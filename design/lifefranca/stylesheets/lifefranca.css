@@ -1,0 +1,191 @@
+.facet-search .fade {
+  opacity: 0;
+  -webkit-transition: opacity .15s linear;
+       -o-transition: opacity .15s linear;
+          transition: opacity .15s linear;
+}
+.facet-search .fade.in {
+  opacity: 1;
+}
+.facet-search .collapse, .facet-search .has-active .collapsing {
+  display: none;
+  visibility: hidden;
+}
+.facet-search .collapse.in {
+  display: block;
+  visibility: visible;
+}
+
+.facet-search .btn-block {
+    display: block;
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+
+}
+
+.facet-search .list-inline > li {
+    display: inline-block;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.facet-search .Grid-cell{
+    position: relative;
+}
+
+.facet-search .widget li a, 
+.facet-search .widget li a:hover{
+    text-decoration: none !important;
+}
+
+@media (min-width: 768px) {
+    .facet-search .widget{
+        margin-bottom: 30px;        
+        position: absolute;
+        z-index: 10000;
+        background: #fff;
+        right: 8px;
+        left: 8px;
+        padding: 0
+    }
+    .facet-search .widget > ul{
+        max-height: 270px;
+        overflow-y: auto;
+    }
+    /*.facet-search .widget li.remove-filter{
+        position: absolute;
+        width: 100%;
+        bottom: -48px;
+        left: 0
+    }*/    
+    .facet-search .current-xs-filters,
+    .facet-search .open-xs-filter,
+    .facet-search .close-xs-filter{
+        display: none !important;
+    }
+    .facet-search .filters-wrapper{
+        margin-bottom: 20px
+    }
+}
+
+.facet-search .widget li a[data-value="all"]{
+    display: block !important;
+    background: #0DB5EB;
+    color: #fff !important;
+}
+.facet-search .widget li a[data-value="all"]:hover{
+    color: #333 !important;
+    text-decoration: none  !important;
+}
+.facet-search .widget li.active a[data-value="all"]{
+    display: none !important;
+}
+
+.facet-search .widget_title{
+    margin: 20px 0 0 !important;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccc
+}
+.facet-search .widget_title a{
+    display: block;
+    text-decoration: none;
+}
+.facet-search .widget_title a:focus{
+    outline: none;
+}
+.facet-search .widget_title a i {
+    padding-right: 10px
+}
+
+.facet-search .current-filters-wrapper{
+    margin: 0 0 20px
+}
+
+.facet-search ul li a.text-muted {
+    color: #999999 !important;
+}
+
+@media (max-width: 767px) {
+    .hidden-xs{
+        display: none;
+    }        
+    .facet-search .filters-wrapper-xs{
+        display: block;
+        position: fixed;
+        z-index: 10000;
+        background: #fff;
+        padding: 10px 20px;
+        top: 0;
+        bottom: 40px;
+        left: 0;
+        right: 0;      
+        opacity: .95;
+    }
+    .facet-search .filters-wrapper-xs .filter-wrapper.active h4.widget_title{
+        position: fixed;
+        width: 100%;
+        left: 0;
+        padding: 20px;
+        background: #fff;
+        z-index: 12000;
+        top: 0;
+        margin: 0 !important;
+    }
+    .facet-search .filters-wrapper-xs .filter-wrapper.active{
+        height: 100%;
+        overflow-y: hidden;
+    }
+    .facet-search .filters-wrapper-xs .filter-wrapper.active .widget{
+        height: auto;
+        position: absolute;
+        top: 77px;
+        width: 100%;
+        left: 0;
+        bottom: 0px;
+        overflow-y: auto;    
+    }
+    .facet-search .filters-wrapper-xs.has-active .filter-wrapper.unactive{
+        display: none;
+    }
+    .facet-search .open-xs-filter{        
+        border-radius: 0;
+    }
+    .facet-search .close-xs-filter{
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        border-radius: 0;
+    }
+    .facet-search .current-xs-filters{
+    	font-size: .7em;
+    	margin: 10px 0 0;
+    }
+    .facet-search .current-filters-wrapper{
+        margin: 20px 0
+    }
+}
+
+.base-layer-buttons{
+    position: absolute;
+    z-index: 200;
+    right: 0;
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.base-layer-buttons a.active{
+    background: #0099d1 !important;
+    color: #fff !important;
+}
+.base-layer-buttons a.btn-xs{
+    padding: 1px 5px;
+    font-size: 13px;
+    line-height: 1.5;
+    border-radius: 2px;
+    text-decoration: none !important
+}
+
+.leaflet-tile-pane {
+  filter: grayscale(100%); 
+}
