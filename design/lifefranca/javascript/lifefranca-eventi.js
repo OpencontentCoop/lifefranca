@@ -2,8 +2,10 @@
 
     $.opendataTools.settings('endpoint', {search: '/openpa/data/lifefranca'});
     
-    var MapLayerFactory = function(label, queryField, containerSelector, facetSort, facetLimit, cssClasses, currentMap, currentBackground, layerOptions){
+    var MapLayerFactory = function(label, queryField, containerSelector, cssClasses, currentMap, currentBackground, layerOptions){
         return {
+
+            type: 'layer',
 
             cssClasses: cssClasses,
 
@@ -26,7 +28,9 @@
             layerOptions: layerOptions,
 
             buildQueryFacet: function () {
-                return queryField+'|'+facetSort+'|'+facetLimit;
+                // non mi serve filtrare la query perché i risultati vengono calcolati direttamente dai filtri attivi
+                return null;
+
             },
 
             buildQuery: function () {
@@ -101,20 +105,7 @@
                 }else{
                     $('li', $(this.container)).removeClass(self.cssClasses.itemWrapperActive);
                     $('li a', $(this.container)).removeClass(self.cssClasses.itemActive);
-                }
-                // console.log(self.name, selectedValue);                       
-                // if ('bacinoprincipale.id' == self.name){
-                //     $.each(selectedValue, function(){                    
-                //         console.log(this); 
-                //         //$('#sottobacino').find('[data-bacino="'+this+'"]').trigger('click');                         
-                //     });
-                // }
-
-                // if (self.layer.getLayers().length > 0) {
-                //     currentMap.fitBounds(self.layer.getBounds());
-                // }else if (currentBackground.getLayers().length > 0) {
-                //     currentMap.fitBounds(currentBackground.getBounds());
-                // }
+                }                
                 self.layer.addTo(currentMap);
                 self.layer._selected = selectedValue;
                 this.setCurrent(selectedValue);
@@ -171,44 +162,7 @@
                         var name = $(this).data('name');
                         $(this).html(name).data('count', 0).addClass(self.cssClasses.itemEmpty);
                     }
-                });
-
-                if (response.facets){
-                    $.each(response.facets, function () {
-                        var name = this.name;
-                        if (this.name == self.name) {
-                            $.each(this.data, function (value, count) {
-                                if (value != '') {
-                                    var quotedValue = self.quoteValue(value);
-                                    
-                                    var item = $('li a[data-value="' + value + '"]', $(self.container));                                                    
-                                    if (item.length) {
-                                        var nameText = item.data('name');
-                                        if (self.showCount){
-                                            nameText += ' (' + count + ')';
-                                        }
-                                        item.html(nameText)
-                                            .removeClass(self.cssClasses.itemEmpty)
-                                            .data('count', count);
-                                    } else {
-                                        var li = $('<li></li>');
-                                        var a = $('<a href="#" class="'+self.cssClasses.item+'" data-name="' + value + '" data-value="' + quotedValue + '"></a>')
-                                            .data('count', count)                                    
-                                            .on('click', function(e){self.filterClickEvent(e,view)});   
-                                        var nameText = value;
-                                        if (self.showCount){
-                                            nameText += ' (' + count + ')';
-                                        }
-                                        a.html(nameText)
-                                            .removeClass(self.cssClasses.itemEmpty)
-                                            .appendTo(li);
-                                        $(self.container).append(li);
-                                    }                            
-                                }
-                            });
-                        }
-                    });
-                }
+                });                
             },
 
             quoteValue: function(value){
@@ -238,6 +192,16 @@
           $(this).prev().find('i').removeClass('fa-plus').addClass('fa-times');
         });
 
+        $('body').click(function (e) {
+            if($(e.target).closest('.widget').length == 0 && $(e.target).closest('.widget_title').length == 0) {
+                $('.widget').each(function(){
+                    if($(this).hasClass('in')){
+                        $(this).removeClass('in').trigger('hidden.bs.collapse');    
+                    }
+                })
+            }
+        });
+
         $('.open-xs-filter').on('click', function(){
             $(this).addClass('hidden-xs');
             $('.filters-wrapper').removeClass('hidden-xs').addClass('filters-wrapper-xs');
@@ -257,7 +221,7 @@
         var that = $(this);
 
         var options = $.extend(true, {
-            'query': "q = '*'",
+            'query': "",
             'filters': [],
             'filterTpl': '#tpl-filter',
             'chartTpl': '#tpl-chart',
@@ -290,7 +254,7 @@
         var osmUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png'; //http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             osmAttrib = '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             osm = L.tileLayer(osmUrl, { maxZoom: 18, attribution: osmAttrib });
-        
+                
         var currentBackground;
         var currentBackgroundFilter;
         var currentMap = new L.Map(that.find('.map')[0], { minZoom: 9, center: new L.LatLng(0, 0), zoom: 13 })
@@ -300,12 +264,21 @@
 
         var selectBaseLayer = function(layerElement){
             if (layerElement.length > 0){
+                var filterWrapper = layerElement.parents('.filter-wrapper');
                 var layerName = layerElement.data('layer');
                 currentBackgroundFilter = layerElement.data('target');;
                 var layerColor = layerElement.data('color');
-                $('.base-layer-buttons a').removeClass('active');
-                $('.base-layer-buttons a[data-layer="'+layerName+'"]').addClass('active');
+                
+                var currentLayerName = $('.base-layer-buttons li.active a').removeClass('Linklist-link--lev1').data('layer');
+                $('.base-layer-buttons li').removeClass('active');
+                $('.base-layer-buttons a[data-layer="'+layerName+'"]').parent().addClass('active');
+                $('.base-layer-buttons li a[data-layer="'+layerName+'"]').addClass('Linklist-link--lev1');
+                $('a[data-value="all"]', $('#'+currentLayerName)).trigger('click');
+                $('#'+currentLayerName).parents('.filter-wrapper').hide();
+                $('#'+layerName).parents('.filter-wrapper').show();
+                
                 baseLayer.clearLayers();
+                
                 that.find('#'+layerName+' ul li a').each(function(){
                     var link = $(this);
                     var geoJSON = link.data('geojson');
@@ -322,7 +295,7 @@
                         });
                         geoJSONLayer.on('click', function(e) {                         
                             //console.log('base click.event on '+link.data('value'), e);                    
-                            $('a[data-value="'+link.data('value')+'"]', $('#'+layerName)).trigger('click');                    
+                            $('a[data-value="'+link.data('value')+'"]', $('#'+layerName)).trigger('click');
                         });
                     }
                 });
@@ -332,6 +305,12 @@
                 }
                 baseLayer.addTo(currentMap);
                 currentBackground = baseLayer;
+
+                filterWrapper.find('.current-xs-filters').html('<li>'+layerElement.text()+'</li>');
+
+                // if (filterWrapper.find('.collapse').hasClass('in')){
+                //     filterWrapper.find('h4.widget_title a').trigger('click');
+                // }
             }
         }        
         $('.base-layer-buttons a').on('click', function(e){            
@@ -339,87 +318,84 @@
             e.preventDefault();
         });
 
-        selectBaseLayer($('.base-layer-buttons a.active'));
+        selectBaseLayer($('.base-layer-buttons li.active a'));
 
-        var searchView = that.opendataSearchView({
+        var searchView = that.lifeFrancaSearchView({
             query: options.query,  
-            onBeforeSearch: function (query, view) {                
-                //view.container.find('.current-result').html(spinner);
-            },
             onLoadResults: function (response, query, appendResults, view) {                
 
                 var currentFilterContainer = view.container.find('.current-filter');
-                var currentFilterAggregateContainer = view.container.find('.current-filter-aggregate');                
+                var currentFilterAggregateContainer = view.container.find('.current-filter-aggregate');    
+                var currentFilterTimeContainer = view.container.find('.current-result');                
                 
                 currentFilterContainer.empty(); 
                 currentFilterAggregateContainer.empty();               
+                currentFilterTimeContainer.empty();               
 
                 $.each(view.filters, function(){
-                    var filter = this;                    
+                    var filter = this;                                        
                     var currentValues = filter.getCurrent();
                     var filterContainer = $(filter.container);  
                     var field = filter.name;
                     var currentXsFilterContainer = filterContainer.parents('div.filter-wrapper').find('.current-xs-filters');                
                     currentXsFilterContainer.empty();
                     if (currentValues.length && jQuery.inArray('all', currentValues) == -1) {                        
+                        var item = $('<li style="margin-bottom:20px"><strong>'+ filter.label +'</strong>:</li>');                    
                         $.each(currentValues, function(){                        
                             var value = this;
-                            var valueElement = $('a[data-value="'+filter.quoteValue(value)+'"]', filter.container);
+                            var valueElement = $('a[data-value="'+filter.quoteValue(value)+'"]', filter.container);                        
                             var name = valueElement.data('name');
-                            
-                            currentXsFilterContainer.append('<li>'+name+'</li>');
-
-                            // un chart per filtro
-                            var currentFilterItem = $(chartTpl.render({
-                                label: filter.label,
-                                name: name,
-                                color: filter.layerOptions.color
-                            }));
-                            currentFilterItem.find('a.close').on('click', function(e){
-                                valueElement.trigger('click');
-                                e.preventDefault();
-                            });                                                                               
-                            currentFilterItem.appendTo(currentFilterContainer);
-                            $.get('/openpa/data/lifefranca', {type: options.dataChart, field: field, value: value}, function(response) {
-                                Highcharts.chart(currentFilterItem.find('.chart')[0], response);
-                            });
-                        });    
-
-                        // chart aggregato
-                        var currentFilterAggrItem = $(chartAggrTpl.render({
-                            label: filter.label,                            
-                            color: filter.layerOptions.color,
-                            height: 300 + (currentValues.length * 100)
-                        }));                  
-                        currentFilterAggrItem.find('a.close').on('click', function(e){
-                            $('a[data-value="all"]', filter.container).trigger('click');
-                            e.preventDefault();
-                        });      
-                        currentFilterAggrItem.appendTo(currentFilterAggregateContainer);
-                        $.get('/openpa/data/lifefranca', {type: options.dataChart+'-aggr', field: field, value: currentValues}, function(response) {
-                            response.tooltip = {
-                                headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-                                pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                                    '<td style="padding:0"><b>{point.y}</b></td></tr>',
-                                footerFormat: '</table>',
-                                shared: true,
-                                useHTML: true
-                            };
-                            Highcharts.chart(currentFilterAggrItem.find('.chart')[0], response);
+                            currentXsFilterContainer.append('<li>'+name+'</li>');                        
+                            $('<a href="#" style="margin:0 5px"><i class="fa fa-times"></i> '+name+'</a>')                            
+                                .on('click', function(e){
+                                    valueElement.trigger('click');
+                                    e.preventDefault();
+                                })
+                                .appendTo(item);
                         });
+                        item.appendTo(currentFilterContainer);
+                        
+                        if (filter.type == 'layer'){
+                            var currentFilterAggrItem = $(chartAggrTpl.render({
+                                label: 'Numero totale',
+                                color: filter.layerOptions.color,
+                                height: 420
+                            }));
+                            currentFilterAggregateContainer.html(currentFilterAggrItem);
 
+                            var currentFilterTimeItem = $(chartTpl.render({
+                                label: 'Timeline',
+                                color: filter.layerOptions.color,
+                                height: 420
+                            }));                                                                                 
+                            currentFilterTimeContainer.html(currentFilterTimeItem);
+
+                            $.get('/openpa/data/lifefranca', {type: options.dataChart, field: field, value: currentValues}, function(response) {
+                                response.tooltip = {
+                                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                                        '<td style="padding:0"><b>{point.y}</b></td></tr>',
+                                    footerFormat: '</table>',
+                                    shared: true,
+                                    useHTML: true
+                                };
+                                Highcharts.chart(currentFilterAggrItem.find('.chart')[0], response);
+                            });
+
+                            $.get('/openpa/data/lifefranca', {type: 'timeline', field: field, value: currentValues}, function(response) {
+                                Highcharts.chart(currentFilterTimeItem.find('.chart')[0], response);                                
+                            });                            
+                        }
                     }else{
                         filterContainer.find('li a[data-value="all"]').parent().addClass('active');
                     }
                 });
 
-
-                //spinner.remove();                
             },
             onLoadErrors: function (errorCode, errorMessage, jqXHR, view) {
                 view.container.html('<div class="alert alert-danger">' + errorMessage + '</div>')
             }
-        }).data('opendataSearchView');
+        }).data('lifeFrancaSearchView');
 
         var template = $.templates(options.filterTpl);
         if (options.layers.length > 0){
@@ -427,9 +403,7 @@
                 var filter = this;
                 filter = $.extend({}, {
                     render: true,
-                    type: 'null', 
-                    facetSort: 'alpha', 
-                    facetLimit: 100,
+                    type: 'null',                     
                     containerSelector: '#'+that.attr('id')+' ul[data-filter="'+filter.queryField+'"]',
                     cssClasses: options.cssClasses,
                     layerOptions: {}
@@ -438,25 +412,29 @@
                 if (filter.render)
                     that.find('.filters-wrapper').append($(template.render(filter)));
                 
+                var mapFilter = 
                 searchView.addFilter(MapLayerFactory(
                     filter.label,
                     filter.queryField, 
-                    filter.containerSelector, 
-                    filter.facetSort, 
-                    filter.facetLimit, 
+                    filter.containerSelector,                     
                     filter.cssClasses,
                     currentMap,
                     currentBackground,
                     filter.layerOptions
-                ));
-                
-            });
+                ));                
+            });            
             that.find('.filters-wrapper').append($($.templates(options.closeXsFilterTpl).render({id: that.attr('id')})));
         }
 
         $.initLifeFrancaBlockEvent();        
 
-        searchView.init().doSearch();
+        searchView.init(); //.doSearch();        
+        $.each(searchView.filters, function(){
+            var filter = this;              
+            if (filter.name == 'bacinoprincipale.id'){
+                $(filter.container).find('a.Linklist-link').first().trigger('click');
+            }            
+        });
 
         return this;
     };

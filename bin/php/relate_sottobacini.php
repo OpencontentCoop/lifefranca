@@ -21,6 +21,42 @@ eZUser::setCurrentlyLoggedInUser( $user , $user->attribute( 'contentobject_id' )
 $baciniPrincipaliNodeid = 1550;
 $sottobaciniNodeid = 1581;
 
+
+function findRelation($string, $classIdentifier)
+{
+    $string = trim($string);
+
+    // eccezioni e smartellamenti
+    if ($classIdentifier == 'bacino'){
+        $string = str_replace('-MERDAR', '- MERDAR', $string);
+        $string = str_replace('STRIGNO-OSPONDAEDALETTO', 'STRIGNO-OSPEDALETTO', $string);
+        $string = str_replace('RIO SPONDAOREGGIO', 'RIO SPOREGGIO', $string);
+        $string = str_replace('CASTELNUOVO-GRIGNO VERSANTE DX', 'CASTELNUOVO-GRIGNO VS. DX', $string);
+        $string = str_replace('TORRENTE LENO', 'TORR. LENO', $string);
+    }
+
+    if ($classIdentifier == 'comune'){
+        $string = str_replace('SAN JAN DI FASSA', 'SÈN JAN DI FASSA', $string);
+    }
+
+    $searchResult = eZSearch::search(
+        trim($string),
+        array(
+            'SearchContentClassID' => array($classIdentifier),
+            'SearchLimit' => 1,
+            'Filter' => array('attr_name_s:"' . $string . '"'),
+            'Limitation' => array()
+        )
+    );
+    if ( $searchResult['SearchCount'] > 0 ){
+        return $string . ' = ' . $searchResult['SearchResult'][0]->attribute( 'contentobject_id' ); 
+    }
+    
+    return $string . ' = ???';
+}
+var_dump( findRelation('STRIGNO-OSPONDAEDALETTO', 'bacino') );
+die();
+
 try
 {
     $geoData = array();
@@ -32,6 +68,14 @@ try
 
     foreach ($baciniPrincipali as $bacino) {
         $dataMap = $bacino->dataMap();
+        /*        
+        $name = $dataMap['name']->toString();
+        $uppername = strtoupper($name);
+        $cli->output($uppername);
+        $dataMap['name']->fromString($uppername);
+        $dataMap['name']->store();
+        eZSearch::addObject($bacino->object(), true);
+        */
         $map = $dataMap['sub_map'];
         $data = $map->dataType()->getWKTList($map);
         $geoData[$bacino->attribute('contentobject_id')] = $data;

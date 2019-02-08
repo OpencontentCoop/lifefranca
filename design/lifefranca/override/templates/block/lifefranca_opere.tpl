@@ -8,7 +8,8 @@
     'ezjsc::jquery',
     'Leaflet.MakiMarkers.js',
     'jquery.ocdrawmap.js',
-    'lifefranca.js',
+    'lifeFrancaSearchView.js',
+    'lifefranca-opere.js',
     'jsrender.js',
     'highcharts/highcharts.js'
 ))}
@@ -46,6 +47,21 @@
     'limit', 300)
 )}
 
+{def $comunita = fetch(content, tree, hash(
+    'parent_node_id', 1, 
+    'class_filter_type', 'include', 
+    'class_filter_array', array('comunita'),  
+    'sort_by', array('name', true()),
+    'limitation', array(),
+    'limit', 300)
+)}
+
+{def $class_opera = fetch( 'content', 'class', hash( 'class_id', 'opera' ) )
+     $tipologie = array()
+     $tipoopera = $class_opera.data_map.tipoopera.content.options}
+{foreach $tipoopera as $tipo}
+    {set $tipologie = $tipologie|append($tipo.name)}
+{/foreach}
 <div class="openpa-widget {$block.view}">
     {if and( $show_title, $block.name|ne('') )}
         <h3 class="openpa-widget-title"><span>{$block.name|wash()}</span></h3>
@@ -55,6 +71,35 @@
         <a href="#" class="Button Button--default btn-block open-xs-filter u-sm-hidden u-md-hidden u-lg-hidden"><i class="fa fa-filter"></i> Filtri</a>
         
         <div class="Grid Grid--withGutter filters-wrapper hidden-xs">
+            
+            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper">                    
+                <h4 class="u-text-h4 widget_title">
+                    <a data-toggle="collapse" href="#contesto" aria-expanded="false" aria-controls="contesto">
+                        <i class="fa fa-plus"></i>
+                        <span>Contesto di ricerca</span>                          
+                    </a>
+                    <ul class="list-inline current-xs-filters">
+                        <li>Bacini principali</li>
+                    </ul>                
+                </h4>
+                <div class="widget collapse" id="contesto">                    
+                    <ul class="Linklist Linklist--padded base-layer-buttons" data-filter="contesto">
+                        <li class="active">
+                            <a href="#" data-layer="bacinoprincipale" data-target="bacinoprincipale.id" data-color="#007fff" class="Linklist-link Linklist-link--lev1">Bacini principali</a>
+                        </li>
+                        <li>
+                            <a href="#" data-layer="sottobacino" data-target="sottobacino.id" data-color="#f00" class="Linklist-link">Sottobacini</a>
+                        </li>
+                        <li>
+                            <a href="#" data-layer="comune" data-target="comune.id"  data-color="#333" class="Linklist-link">Comuni</a>
+                        </li>
+                        <li>
+                            <a href="#" data-layer="comunita" data-target="comunita.id"  data-color="#690" class="Linklist-link">Comunità di Valle</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
             <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper">                    
                 <h4 class="u-text-h4 widget_title">
                     <a data-toggle="collapse" href="#bacinoprincipale" aria-expanded="false" aria-controls="bacinoprincipale">
@@ -81,7 +126,7 @@
                 </div>
             </div>
 
-            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper">                    
+            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper" style="display: none;">                    
                 <h4 class="u-text-h4 widget_title">
                     <a data-toggle="collapse" href="#sottobacino" aria-expanded="false" aria-controls="sottobacino">
                         <i class="fa fa-plus"></i>
@@ -115,7 +160,7 @@
                 </div>
             </div>
 
-            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper">                    
+            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper" style="display: none;">                    
                 <h4 class="u-text-h4 widget_title">
                     <a data-toggle="collapse" href="#comune" aria-expanded="false" aria-controls="comune">
                         <i class="fa fa-plus"></i>
@@ -140,19 +185,71 @@
                     </ul>
                 </div>
             </div>
+
+            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper" style="display: none;">                    
+                <h4 class="u-text-h4 widget_title">
+                    <a data-toggle="collapse" href="#comunita" aria-expanded="false" aria-controls="comunita">
+                        <i class="fa fa-plus"></i>
+                        <span>Comunità di valle</span>                          
+                    </a>
+                    <ul class="list-inline current-xs-filters"></ul>                
+                </h4>
+                <div class="widget collapse" id="comunita">                    
+                    <ul class="Linklist Linklist--padded" data-filter="comunita.id">
+                      <li class="remove-filter"><a href="#" data-value="all">Rimuovi filtri</a></li>
+                      {foreach $comunita as $item}                        
+                        <li>
+                            <a href="#" 
+                               class="Linklist-link" 
+                               data-name="{$item.name|wash()}"
+                               data-geojson='{$item.data_map.map.content.geo_json|explode("'")|implode('')}' 
+                               data-value="{$item.contentobject_id|wash()}">
+                                {$item.name|wash()}
+                            </a>
+                        </li>
+                        {/foreach}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3 filter-wrapper">                    
+                <h4 class="u-text-h4 widget_title">
+                    <a data-toggle="collapse" href="#tipologia" aria-expanded="false" aria-controls="tipologia">
+                        <i class="fa fa-plus"></i>
+                        <span>Tipologia</span>                          
+                    </a>
+                    <ul class="list-inline current-xs-filters"></ul>                
+                </h4>
+                <div class="widget collapse" id="tipologia">                    
+                    <ul class="Linklist Linklist--padded" data-filter="tipologia">
+                        {foreach $tipologie as $item}                        
+                        <li>
+                            <a href="#" 
+                               class="Linklist-link" 
+                               data-name="{$item|wash()}"                               
+                               data-value="{$item|wash()}">
+                                {$item|wash()}
+                            </a>
+                        </li>
+                        {/foreach}
+                    </ul>
+                </div>
+            </div>
         </div>
-        
-        <div class="base-layer-buttons">
-            <a href="#" data-layer="bacinoprincipale" data-target="bacinoprincipale.id" data-color="#007fff" class="btn btn-default btn-xs active">Bacini principali</a>
-            <a href="#" data-layer="sottobacino" data-target="sottobacino.id" data-color="#f00" class="btn btn-default btn-xs">Sottobacini</a>
-            <a href="#" data-layer="comune" data-target="comune.id"  data-color="#333" class="btn btn-default btn-xs">Comuni</a>
-        </div>
-        <div class="map" style="width: 100%; height: 500px"></div>
-        <div class="current-result"></div>
+                
         <div class="current-filters-wrapper">            
-            <div class="Grid Grid--withGutter current-filter-aggregate"></div>
-            <div class="Grid Grid--withGutter current-filter"></div>
+            <ul class="current-filter" style="margin: 20px 0"></ul>
         </div>        
+        
+        <div class="Grid Grid--withGutter">
+            <div class="Grid-cell u-sizeFull u-sm-size2of3 u-md-size2of3 u-lg-size2of3">
+                <div class="map" style="width: 100%; height: 500px"></div>
+            </div>
+            <div class="Grid-cell u-sizeFull u-sm-size1of3 u-md-size1of3 u-lg-size1of3" style="height: 500px;overflow-y: auto;">
+                <div class="Grid Grid--withGutter current-filter-aggregate"></div> 
+                <div class="current-result"></div>        
+            </div>
+        </div>
             
     </div>
 </div>
@@ -216,25 +313,23 @@
 </script>
 
 <script id="tpl-chart" type="text/x-jsrender">
-<div class="Grid-cell u-size1of2 u-sm-size1of2 u-md-size1of3 u-lg-size1of3">
-    <div class="u-nbfc u-border-all-xxs u-color-grey-30 u-background-white u-margin-top-s"     
-         style="position:relative; border-color:{{:color}} !important">    
-        <a href="#" style="margin:10px;position:absolute;right:0;color:{{:color}}" class="close"><i class="fa fa-times"></i></a>
-        <div class="u-padding-all-s u-layout-prose">
-            <p class="u-margin-bottom-xxs u-color-grey-80 u-text-xs">{{:label}}</p>
-            <h3 class="u-text-4 u-color-black">{{:name}}</h3> 
-            <div class="chart"></div>       
-        </div>
+<div class="u-nbfc u-border-all-xxs u-color-grey-30 u-background-white"
+     style="position:relative; border-color:{{:color}} !important">    
+    <a href="#" style="margin:10px;position:absolute;right:0;color:{{:color}}" class="close"><i class="fa fa-times"></i></a>
+    <div class="u-padding-all-s">
+        <p class="u-margin-bottom-xxs u-color-grey-80 u-text-xs">{{:label}}</p>
+        <h3 class="u-text-4 u-color-black">{{:name}}</h3> 
+        <div class="chart"></div>       
     </div>
 </div>
 </script>
 <script id="tpl-chart-aggr" type="text/x-jsrender">
-<div class="Grid-cell u-sizeFull">
-    <div class="u-nbfc u-border-all-xxs u-color-grey-30 u-background-white u-margin-top-s"     
-         style="position:relative; border-color:{{:color}} !important">            
+<div class="Grid-cell u-sizeFull u-margin-bottom-l">
+    <div class="u-nbfc u-border-all-xxs u-color-grey-30 u-background-white"
+         style="position:relative; border-color:{{:color}} !important; box-shadow: 0 1px 2px 0 rgba(50,50,50,.35) !important">            
         <a href="#" style="margin:10px;position:absolute;right:0;color:{{:color}}" class="close"><i class="fa fa-times"></i></a>
         <div class="u-padding-all-s">            
-            <p class="u-margin-bottom-xxs u-color-grey-80 u-text-xs">Dati aggregati per {{:label}}</p>            
+            <h3 class="u-margin-bottom-xxs u-color-grey-80 u-text-xs">{{:label}}</h3>
             <div class="chart" style="min-height:{{:height}}px;width100%"></div>       
         </div>
     </div>
@@ -248,8 +343,7 @@
 $(document).ready(function(){
     $.opendataTools.settings('accessPath', "{/literal}{''|ezurl(no,full)}{literal}");
 
-    $('#lifefranca-opere').lifeFrancaBlock({
-        'query': "classes [opera] limit 1",
+    $('#lifefranca-opere').lifeFrancaBlock({        
         'cssClasses': {
             'item': 'Linklist-link',
             'itemActive': 'Linklist-link--lev1',
@@ -283,6 +377,12 @@ $(document).ready(function(){
                 'label': 'Comune',
                 'render': false,
                 'layerOptions': {color:'#333',weight: 2,opacity: 0.9}
+            },
+            {
+                'queryField': 'comunita.id',
+                'label': 'Comunità di Valle',
+                'render': false,
+                'layerOptions': {color:'#690',weight: 2,opacity: 0.9}
             }
         ]
     });   
