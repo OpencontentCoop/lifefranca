@@ -364,7 +364,7 @@
                             currentFilterAggregateContainer.html(currentFilterAggrItem);
 
                             var currentFilterTimeItem = $(chartTpl.render({
-                                label: 'Timeline',
+                                label: 'Timeline degli eventi',
                                 color: filter.layerOptions.color,
                                 height: 420
                             }));                                                                                 
