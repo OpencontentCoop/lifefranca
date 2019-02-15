@@ -407,5 +407,12 @@ class DataHandlerLifeFranca implements OpenPADataHandlerInterface
 		return $data;
 	}
 
+	public static function clearCache()
+	{		
+	    $fileHandler = eZClusterFileHandler::instance();
+	    $commonSuffix = '';
+	    $fileHandler->fileDeleteByDirList( array( 'lifefranca' ), eZSys::cacheDirectory(), $commonSuffix );
+	}
+
 }
     

@@ -363,12 +363,12 @@
                             }));
                             currentFilterAggregateContainer.html(currentFilterAggrItem);
 
-                            var currentFilterTimeItem = $(chartTpl.render({
-                                label: 'Timeline degli eventi',
-                                color: filter.layerOptions.color,
-                                height: 420
-                            }));                                                                                 
-                            currentFilterTimeContainer.html(currentFilterTimeItem);
+                            // var currentFilterTimeItem = $(chartTpl.render({
+                            //     label: 'Timeline degli eventi',
+                            //     color: filter.layerOptions.color,
+                            //     height: 420
+                            // }));                                                                                 
+                            // currentFilterTimeContainer.html(currentFilterTimeItem);
 
                             $.get('/openpa/data/lifefranca', {type: options.dataChart, field: field, value: currentValues}, function(response) {
                                 response.tooltip = {
@@ -382,9 +382,9 @@
                                 Highcharts.chart(currentFilterAggrItem.find('.chart')[0], response);
                             });
 
-                            $.get('/openpa/data/lifefranca', {type: 'timeline', field: field, value: currentValues}, function(response) {
-                                Highcharts.chart(currentFilterTimeItem.find('.chart')[0], response);                                
-                            });                            
+                            // $.get('/openpa/data/lifefranca', {type: 'timeline', field: field, value: currentValues}, function(response) {
+                            //     Highcharts.chart(currentFilterTimeItem.find('.chart')[0], response);                                
+                            // });                            
                         }
                     }else{
                         filterContainer.find('li a[data-value="all"]').parent().addClass('active');

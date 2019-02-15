@@ -21,106 +21,145 @@ $parentNodeId = 1550;
 
 try
 {
-    function importFullMaps()
-    {
-        global $parentNodeId, $cli;        
+    // function importFullMaps()
+    // {
+    //     global $parentNodeId, $cli;        
 
-        $rawData = file_get_contents('extension/lifefranca/data/BaciniPrincipali.geojson');
-        $data = json_decode($rawData, true);
+    //     //$rawData = file_get_contents('extension/lifefranca/data/BaciniPrincipali.geojson');
+    //     $rawData = file_get_contents('extension/lifefranca/data/ambiti_territoriali/bacini_principali.json');
+    //     $data = json_decode($rawData, true);
 
-        $count = count($data['features']);
-        $i = 0;
-        foreach ($data['features'] as $item) {
-            $i++;
-            $properties = $item['properties'];
+    //     $count = count($data['features']);
+    //     $i = 0;
+    //     foreach ($data['features'] as $item) {
+    //         $i++;
+    //         $properties = $item['properties'];
 
-            $map = array(
-                'type' => '',
-                'color' => '',
-                'source' => '',
-                'geo_json' => json_encode(array(
-                    "type" => "FeatureCollection",
-                    "features" => array(
-                        $item
-                    )
-                )),            
-            );
+    //         $map = array(
+    //             'type' => '',
+    //             'color' => '',
+    //             'source' => '',
+    //             'geo_json' => json_encode(array(
+    //                 "type" => "FeatureCollection",
+    //                 "features" => array(
+    //                     $item
+    //                 )
+    //             )),            
+    //         );
 
-            $attributeList = array(
-                'name' => $properties['nomebacino'],
-                'level' => 'PRINCIPALE',
-                'objectid' => $properties['objectid'],
-                'classid' => $properties['classid'],
-                'sub_map' => json_encode($map)
-            );
+    //         print_r($properties);
 
-            $params = array();        
-            $params['class_identifier'] = 'bacino';
-            $params['remote_id'] = 'bacino_' . $attributeList['objectid'];
-            $params['parent_node_id'] = $parentNodeId;
-            $params['attributes'] = $attributeList; 
+    //         // $attributeList = array(
+    //         //     'name' => $properties['nomebacino'],
+    //         //     'level' => 'PRINCIPALE',
+    //         //     'objectid' => $properties['objectid'],
+    //         //     'classid' => $properties['classid'],
+    //         //     'sub_map' => json_encode($map)
+    //         // );
 
-            $contentObject = eZContentFunctions::createAndPublishObject($params);
-            eZContentObject::clearCache();
+    //         // $params = array();        
+    //         // $params['class_identifier'] = 'bacino';
+    //         // $params['remote_id'] = 'bacino_' . $attributeList['objectid'];
+    //         // $params['parent_node_id'] = $parentNodeId;
+    //         // $params['attributes'] = $attributeList; 
 
-            $cli->output("$i/$count " . $attributeList['name']);
-        }
-    }   
+    //         // $contentObject = eZContentFunctions::createAndPublishObject($params);
+    //         // eZContentObject::clearCache();
+
+    //         $cli->output("$i/$count " . $properties['nomebacino']);
+    //     }
+    // }   
 
 
-    function importSimpleMaps()
-    {
-        global $parentNodeId, $cli;
+    // function importSimpleMaps()
+    // {
+    //     global $parentNodeId, $cli;
 
-        $parentNode = eZContentObjectTreeNode::fetch($parentNodeId);
-        $bacini = array();
-        foreach ($parentNode->children() as $node) {
-            $slug = strtolower($node->attribute('name'));
-            $bacini[$slug] = $node;
-        }
+    //     $parentNode = eZContentObjectTreeNode::fetch($parentNodeId);
+    //     $bacini = array();
+    //     foreach ($parentNode->children() as $node) {
+    //         $slug = strtolower($node->attribute('name'));
+    //         $bacini[$slug] = $node;
+    //     }
 
-        $rawData = file_get_contents('extension/lifefranca/data/BaciniPrincipali.solo_contorno.geojson');
-        $data = json_decode($rawData, true);
+    //     $rawData = file_get_contents('extension/lifefranca/data/BaciniPrincipali.solo_contorno.geojson');
+    //     $data = json_decode($rawData, true);
 
-        $count = count($data['features']);
-        $i = 0;
-        foreach ($data['features'] as $item) {
-            $i++;
-            $properties = $item['properties'];
+    //     $count = count($data['features']);
+    //     $i = 0;
+    //     foreach ($data['features'] as $item) {
+    //         $i++;
+    //         $properties = $item['properties'];
 
-            $map = array(
-                'type' => '',
-                'color' => '',
-                'source' => '',
-                'geo_json' => json_encode(array(
-                    "type" => "FeatureCollection",
-                    "features" => array(
-                        $item
-                    )
-                )),            
-            );
+    //         $map = array(
+    //             'type' => '',
+    //             'color' => '',
+    //             'source' => '',
+    //             'geo_json' => json_encode(array(
+    //                 "type" => "FeatureCollection",
+    //                 "features" => array(
+    //                     $item
+    //                 )
+    //             )),            
+    //         );
 
-            $name = $properties['NOMEBACINO'];
-            $slug = strtolower($name);
-            $cli->output($name, false);    
-            if (isset($bacini[$slug])){
-                $cli->output(' ' . $bacini[$slug]->attribute('contentobject_id'));
-                $params = array();
-                $params['attributes'] = array(
-                    'name' => $name,                    
-                    'map' => json_encode($map)
-                );
-                $result = eZContentFunctions::updateAndPublishObject( $bacini[$slug]->object(), $params );
-                if( !$result ){
-                    $cli->error("Il bacino $name non è stato salvato");
-                }
-            }else{
-                $cli->error("Il bacino $name non è presente nel sistema");
+    //         $name = $properties['NOMEBACINO'];
+    //         $slug = strtolower($name);
+    //         $cli->output($name, false);    
+    //         if (isset($bacini[$slug])){
+    //             $cli->output(' ' . $bacini[$slug]->attribute('contentobject_id'));
+    //             $params = array();
+    //             $params['attributes'] = array(
+    //                 'name' => $name,                    
+    //                 'map' => json_encode($map)
+    //             );
+    //             $result = eZContentFunctions::updateAndPublishObject( $bacini[$slug]->object(), $params );
+    //             if( !$result ){
+    //                 $cli->error("Il bacino $name non è stato salvato");
+    //             }
+    //         }else{
+    //             $cli->error("Il bacino $name non è presente nel sistema");
+    //         }
+    //     }
+    // }
+
+    //importSimpleMaps();
+
+    $rawData = file_get_contents('extension/lifefranca/data/ambiti_territoriali/bacini_principali.json');
+    $data = json_decode($rawData, true);
+
+    $bacini = eZContentObjectTreeNode::fetch($parentNodeId)->children();
+
+    $count = count($data['features']);
+    $i = 0;
+    foreach ($data['features'] as $item) {
+        $i++;
+        $properties = $item['properties'];
+
+        $map = array(
+            'type' => '',
+            'color' => '',
+            'source' => '',
+            'geo_json' => json_encode(array(
+                "type" => "FeatureCollection",
+                "features" => array(
+                    $item
+                )
+            )),            
+        );
+
+        foreach ($bacini as $bacino) {
+            $dataMap = $bacino->dataMap();
+            if ($dataMap['classid']->toString() == $properties['classid']){
+                $cli->output($bacino->attribute('name'). ' -> ', false);                
+                $bacino->object()->setAttribute('remote_id', $properties['classid']);
+                $bacino->object()->store();
             }
         }
-    }
 
-    importSimpleMaps();
+
+        $cli->output("$i/$count " . $properties['nomebacino']);
+    }
 
     $script->shutdown();
 }

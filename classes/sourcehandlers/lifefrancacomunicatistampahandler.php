@@ -39,7 +39,17 @@ class LifeFrancaComunicatiStampaHandler extends SQLIImportAbstractHandler implem
 		}else{
 			$this->parentNodeID = $this->handlerConfArray['DefaultParentNodeID'];
 		}
-		$this->loadData($this->handlerConfArray['Endpoint'] . rawurlencode($this->handlerConfArray['Query']));
+		$query = $this->handlerConfArray['Query'];
+		$startDate = '2018-09-01';
+		$lastImportItem = eZDB::instance()->arrayQuery("SELECT * FROM sqliimport_item WHERE handler = 'lifefrancomunicatistampa' ORDER BY requested_time desc LIMIT 1");
+		if(count($lastImportItem) > 0){
+			$lastTimestamp = $lastImportItem[0]['requested_time'];
+			$lastTimestamp = $lastTimestamp - 86400;
+			$startDate = date('Y-m-d', $lastTimestamp);
+		}
+		$query = str_replace('%start_date%', $startDate, $query);
+		$this->cli->output("Load data: $query");
+		$this->loadData($this->handlerConfArray['Endpoint'] . rawurlencode($query));
 
 		$this->remoteUrl = parse_url($this->handlerConfArray['Endpoint'], PHP_URL_SCHEME) . '://' . parse_url($this->handlerConfArray['Endpoint'], PHP_URL_HOST);
 
@@ -47,8 +57,7 @@ class LifeFrancaComunicatiStampaHandler extends SQLIImportAbstractHandler implem
 
 	private function loadData($url)
 	{		
-		$url = str_replace('http:', 'https:', $url);
-		$this->cli->output("Load data from $url");
+		$url = str_replace('http:', 'https:', $url);		
 		$response = json_decode(
 			eZHTTPTool::getDataByURL($url),
 			true

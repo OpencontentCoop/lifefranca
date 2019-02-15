@@ -128,6 +128,7 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 
 	public function cleanup()
 	{
+		DataHandlerLifeFranca::clearCache();
 		return;
 	}
 
@@ -166,7 +167,7 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		$this->setFileNodeStatus(self::STATUS_DOING);
 		$csvOptions = new SQLICSVOptions( array(
             'csv_path'         => $filePath,
-            'delimiter'        => ',',
+            'delimiter'        => ';',
             'enclosure'        => '"'
         ) );
         $doc = new SQLICSVDoc( $csvOptions );
@@ -192,30 +193,36 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 
 	private function importOpera($item)
 	{
-		//$this->cli->output($item->obid);
+		//$this->cli->output($item->classid);
 		
-		$this->currentRowId = (string)$item->obid;
+		$this->currentRowId = (string)$item->classid;
 		$contentOptions = new SQLIContentOptions(array(
             'class_identifier' => 'opera',
-            'remote_id' => 'opera_' . $item->obid,
+            'remote_id' => 'opera_' . $item->classid,
         ));
 
         $parentNodeID = $this->findOperaParentNodeId($item->tipoOpera);
 
         $content = SQLIContent::create($contentOptions);
-        $content->fields->obid = $item->obid;
+        $content->fields->classid = $item->classid;
         $content->fields->gps = "1|#{$item->y}|#{$item->x}|#";
         $content->fields->tipoopera = $this->findTipoOpera($item->tipoOpera);
         $content->fields->anno = (string)$item->annoRealizzazione != '' ? (int)$item->annoRealizzazione : null;
         $content->fields->bacinoprincipale = $this->findRelation($item->bacinoPrincipale, 'bacino');
         $content->fields->sottobacini = $this->findRelation($item->sottobacino, 'bacino');
         $content->fields->comune = $this->findRelation($item->comune, 'comune');
-        $content->fields->comunita = $this->findRelation($item->comunitDiValle, 'comunita');
-        $content->fields->materiale = $item->materiale;
-        $content->fields->quantita = $item->quantit;
-        $content->fields->unita_misura = $item->unitMisura;
-        $content->fields->area_drenata = $item->areaDrenata;
-        $content->fields->pendenza_monte = $item->pendenzaMonte;
+        $content->fields->comunita = $this->findRelation($item->comunitaDiValle, 'comunita');
+        if(isset($item->materiale)){
+        	$content->fields->materiale = $item->materiale;
+        }
+        $content->fields->quantita = $item->quantita;
+        $content->fields->unita_misura = $item->unitaMisura;        
+        if(isset($item->areaDrenata)){
+        	$content->fields->area_drenata = $item->areaDrenata;
+        }
+        if(isset($item->pendenzaMonte)){
+        	$content->fields->pendenza_monte = $item->pendenzaMonte;
+        }
         
         $content->addLocation(SQLILocation::fromNodeID($parentNodeID));
         $publisher = SQLIContentPublisher::getInstance();
@@ -229,51 +236,32 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 	private function findRelation($string, $classIdentifier)
 	{
 		$string = trim($string);
+		$string = str_replace(' ', '_', $string);
 
-		// eccezioni e smartellamenti
+		// eccezioni
 		if ($classIdentifier == 'bacino'){
-			$string = str_replace('-MERDAR', '- MERDAR', $string);
-			$string = str_replace('STRIGNO-OSPONDAEDALETTO', 'STRIGNO-OSPEDALETTO', $string);
-			$string = str_replace('RIO SPONDAOREGGIO', 'RIO SPOREGGIO', $string);
-			$string = str_replace('CASTELNUOVO-GRIGNO VERSANTE DX', 'CASTELNUOVO-GRIGNO VS. DX', $string);
-			$string = str_replace('TORRENTE LENO', 'TORR. LENO', $string);
-			$string = str_replace('TORRENTE RABBIES', 'TORR. RABBIES', $string);
-			$string = str_replace('TORRENTE PESCARA', 'TORR. PESCARA', $string);
-			$string = str_replace('TORRENTE NOVELLA', 'TORR. NOVELLA', $string);
-			$string = str_replace('TORRENTE VERMIGLIANA', 'TORR. VERMIGLIANA', $string);
-			$string = str_replace('TORRENTE ALA', 'TORR. ALA', $string);
-			$string = str_replace('SPONDAONDA', 'SPONDA', $string);
-			$string = str_replace('S. VALENTINO-VALLE CIPRIANA', 'S. VALENTINO-V. CIPRIANA', $string);
-			$string = str_replace('SPONDA. SX RENDENA', 'SP. SX RENDENA', $string);
-			$string = str_replace('SPONDA. SINISTRA RENDENA', 'SP. SX RENDENA', $string);
+			
 		}
 
 		if ($classIdentifier == 'comune'){
-			$string = str_replace('SAN JAN DI FASSA', 'SÈN JAN DI FASSA', $string);
-			$string = str_replace("E'", 'È', $string);
-			$string = str_replace("A'", 'À', $string);
-			$string = str_replace("O'", 'Ò', $string);
+
+			// if (in_array($string, ['AMB003_169', 'AMB003_2'])){
+			// 	$string = 'SÈN JAN DI FASSA'; //@todo
+			// }
 		}
 
 		if(isset($this->relationsCache[$classIdentifier][$string])){
 			return $this->relationsCache[$classIdentifier][$string];
 		}
 
-		$searchResult = eZSearch::search(
-            trim($string),
-            array(
-                'SearchContentClassID' => array($classIdentifier),
-                'SearchLimit' => 1,
-                'Filter' => array('attr_name_s:"' . $string . '"')
-            )
-        );
-        if ( $searchResult['SearchCount'] > 0 ){
-            $this->relationsCache[$classIdentifier][$string] = $searchResult['SearchResult'][0]->attribute( 'contentobject_id' );
+		$relation = eZContentObject::fetchByRemoteID($string);
+        if ($relation instanceof eZContentObject){
+            $this->relationsCache[$classIdentifier][$string] = $relation->attribute( 'id' );
             
             return $this->relationsCache[$classIdentifier][$string]; 
         }
 
-        $this->appendFileNodeLog("Relazione $string di classe $classIdentifier non trovata");
+        $this->appendFileNodeLog("$classIdentifier \"$string\" non trovato");
         $this->currentFileHasError = true;
         
         return null;
@@ -288,8 +276,10 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 			'drenaggi' => 'Drenaggio',
 			'cunettone' => 'Cunettone',
 			'rafforzamento arginale' => 'Rafforzamento arginale',
+			'interventi di ingegneria naturalistica' => 'Intervento di Ingegneria Naturalistica',
 			'interventi_di ingegneria naturalistica' => 'Intervento di Ingegneria Naturalistica',
 			'opera spondale' => 'Opera spondale',
+			'opere di consolidamento' => 'Opera di consolidamento',
 			'opere consolidamento' => 'Opera di consolidamento',
 			'piazza e vasche di deposito' => 'Piazza di deposito',
 			'vallitomo' => 'Vallo Tomo',
@@ -333,17 +323,17 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 	private function validateOperaHeaders($headers)
 	{
 		$validHeaders = array(
-			'obid',
+			'classid',
 			'tipoOpera',
 			'annoRealizzazione',
-			'materiale',
-			'quantit',
-			'unitMisura',
-			'areaDrenata',
-			'pendenzaMonte',
+			//'materiale',
+			'quantita',
+			'unitaMisura',
+			//'areaDrenata',
+			//'pendenzaMonte',
 			'bacinoPrincipale',
 			'sottobacino',
-			'comunitDiValle',
+			'comunitaDiValle',
 			'comune',
 			'x',
 			'y',
@@ -398,14 +388,14 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 			'tipoEvento',
 			'dataEvento',
 			'localita',
-			'descrizione',
-			'danni',
-			'corsoAcqua',
-			'fonte',
+			// 'descrizione',
+			// 'danni',
+			// 'corsoAcqua',
+			// 'fonte',
 			'bacinoPrincipale',
 			'sottobacino',
 			'comunitaDiValle',
-			'comune',
+			'comuni',
 			'x',
 			'y',
 		);
@@ -440,13 +430,13 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
         $content->fields->data = $item->dataEvento;
         $content->fields->bacinoprincipale = $this->findRelation(strtoupper($item->bacinoPrincipale), 'bacino');
         $content->fields->sottobacini = $this->findRelation(strtoupper($item->sottobacino), 'bacino');
-        $content->fields->comune = $this->findRelation(strtoupper($item->comune), 'comune');
+        $content->fields->comune = $this->findRelation(strtoupper($item->comuni), 'comune');
         $content->fields->comunita = $this->findRelation(strtoupper($item->comunitaDiValle), 'comunita');
         $content->fields->localita = $item->localita;
-        $content->fields->descrizione = $item->descrizione;
-        $content->fields->danni = $item->danni;
-        $content->fields->corso_acqua = $item->corsoAcqua;
-        $content->fields->fonte = $item->fonte;
+        // $content->fields->descrizione = $item->descrizione;
+        // $content->fields->danni = $item->danni;
+        // $content->fields->corso_acqua = $item->corsoAcqua;
+        // $content->fields->fonte = $item->fonte;
         
         $content->addLocation(SQLILocation::fromNodeID($parentNodeID));
         $publisher = SQLIContentPublisher::getInstance();
@@ -465,7 +455,7 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		
 		$context = '';
 		if ($this->currentRowId){
-			$context = " (obid " . $this->currentRowId . ')';
+			$context = " (id " . $this->currentRowId . ')';
 		}
 		$content = "<p>{$message} " . $context . "</p>";			
 		$this->currentFileLog[$this->currentFileNode->attribute('node_id')][] = $content;
@@ -476,7 +466,7 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		$dataMap = $this->currentFileNode->dataMap();
 		if (isset($dataMap['description'])){
 			$time = strftime( "%b %d %Y %H:%M:%S", strtotime( "now" ) );
-			$content = "<p>{$time}</p>" . implode("\n", $this->currentFileLog[$this->currentFileNode->attribute('node_id')]);
+			$content = "<p>Elaborato il {$time}</p>" . implode("\n", $this->currentFileLog[$this->currentFileNode->attribute('node_id')]);
 			$dataMap['description']->fromString($this->getRichContent($content));
 			$dataMap['description']->store();
 		}

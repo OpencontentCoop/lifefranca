@@ -7,10 +7,11 @@ TranslationExtensions[]=lifefranca
 CacheItems[]=lifefranca
 
 [Cache_lifefranca]
-name=lifefranca custom block cache
+name=Lifefranca map cache
 id=lifefranca
 tags[]=lifefranca
 path=lifefranca
 isClustered=true
+class=DataHandlerLifeFranca
 
 */ ?>
