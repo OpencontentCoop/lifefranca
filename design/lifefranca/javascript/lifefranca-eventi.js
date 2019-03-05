@@ -251,7 +251,7 @@
         var chartTpl = $.templates(options.chartTpl);
         var chartAggrTpl = $.templates(options.chartAggrTpl);
 
-        var osmUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png'; //http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        var osmUrl = 'https://{s}.tile.osm.org/{z}/{x}/{y}.png'; //http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             osmAttrib = '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             osm = L.tileLayer(osmUrl, { maxZoom: 18, attribution: osmAttrib });
                 
