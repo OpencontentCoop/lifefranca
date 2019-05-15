@@ -14,4 +14,7 @@ path=lifefranca
 isClustered=true
 class=DataHandlerLifeFranca
 
+[RoleSettings]
+PolicyOmitList[]=lifefranca/webgis
+
 */ ?>

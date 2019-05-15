@@ -19,3 +19,10 @@ Source=node/view/full.tpl
 MatchFile=full/lifefranca_import_folder.tpl
 Subdir=templates
 Match[parent_node]=63435
+
+[block_lifefranca_webgisform]
+Source=block/view/view.tpl
+MatchFile=block/lifefranca_webgisform.tpl
+Subdir=templates
+Match[type]=Lifefranca
+Match[view]=webgisform_wide
