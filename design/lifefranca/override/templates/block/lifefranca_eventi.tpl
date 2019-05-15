@@ -1,5 +1,8 @@
 {run-once}
 {ezscript_require( array(    
+    'ezjsc::jquery', 
+    'ezjsc::jqueryUI', 
+    'plugins/noUiSlider/jquery.nouislider.all.js',
     'bootstrap/transition.js',
     'bootstrap/collapse.js',
     'jquery.opendataTools.js',
@@ -13,7 +16,7 @@
     'jsrender.js',
     'highcharts/highcharts.js'
 ))}
-{ezcss_require( array('lifefranca.css', 'leaflet/leaflet.0.7.2.css', 'highcharts/highcharts.css') )}    
+{ezcss_require( array('lifefranca.css', 'leaflet/leaflet.0.7.2.css', 'highcharts/highcharts.css', 'plugins/noUiSlider/jquery.nouislider.min.css') )}    
 {/run-once}
 
 {set_defaults(hash('show_title', true(), 'items_per_row', 1, language, 'ita-IT'))}
@@ -56,6 +59,8 @@
     'limit', 300)
 )}
 
+{*def $first_event_timestamp = api_search("select-fields [extradata.timestamp] classes [historical_event] sort [raw[extra_data_dt]=>asc] limit 1")[0]*}
+{def $first_event_timestamp = 631152000} {*1/1/1990*}
 <div class="openpa-widget {$block.view}">
     {if and( $show_title, $block.name|ne('') )}
         <h3 class="openpa-widget-title"><span>{$block.name|wash()}</span></h3>
@@ -207,6 +212,19 @@
             </div>
             
         </div>
+
+        <div class="year-selector-container">          
+          <div id="year-selector">
+            <p style="margin-bottom: 10px">
+                <strong>Periodo:</strong> 
+                <small class="event-start">da <span></span></small> 
+                <small class="event-end">a <span></span></small>
+            </p>
+            <div id="year-selector-slider" style="padding: 0 20px" data-start="{$first_event_timestamp}" data-end="{currentdate()}"></div>            
+          </div>
+          <input id="data-year-selector" type="hidden" name="year" value="" />
+        </div>
+
                 
         <div class="current-filters-wrapper">            
             <ul class="current-filter" style="margin: 20px 0"></ul>

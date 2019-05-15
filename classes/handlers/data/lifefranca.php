@@ -28,6 +28,7 @@ class DataHandlerLifeFranca implements OpenPADataHandlerInterface
 		$field = $http->hasVariable('field') ? $http->variable('field') : false;
 		$value = $http->hasVariable('value') ? $http->variable('value') : false;
 		$types = $http->hasVariable('types') ? $http->variable('types') : false;
+		$range = $http->hasVariable('range') ? $http->variable('range') : false;
 
 		if (!$field || !$value){
 			return array();
@@ -39,7 +40,7 @@ class DataHandlerLifeFranca implements OpenPADataHandlerInterface
 			}
 
 			if ($http->variable('type') == 'eventi'){				
-				return $this->getEventi($field, $value);
+				return $this->getEventi($field, $value, $range);
 			}
 
 			if ($http->variable('type') == 'timeline'){				
@@ -210,19 +211,32 @@ class DataHandlerLifeFranca implements OpenPADataHandlerInterface
 		return $data;
 	}
 
-	private static function innerGetEventiFacetsData($field, $value)
+	private static function innerGetEventiFacetsData($field, $value, $range)
 	{
 		$contentSearch = new ContentSearch();
 		$contentSearch->setEnvironment(new DefaultEnvironmentSettings());
+		
+		$start = '1000-01-01';
+		$end = 'NOW';				
+		$rangeQuery = false;
 
-		$baseQuery = 'classes [historical_event] facets [class|alpha|50] limit 1 range [field=>extra_data_dt,start=>1000-01-01,end=>NOW,gap=>+1MONTH]';
+		if ($range){
+			$rangeParts = explode(',', $range);			
+			if (count($rangeParts) == 2){
+				$start = ezfSolrDocumentFieldBase::convertTimestampToDate(mktime(0,0,0,1,1, date('Y', $rangeParts[0])));
+				$end = ezfSolrDocumentFieldBase::convertTimestampToDate(mktime(0,0,0,12,31, date('Y', $rangeParts[1])));
+				$rangeQuery = "raw[extra_data_dt] range ['$start','$end'] and ";
+			}
+		}
+
+		$baseQuery = 'classes [historical_event] facets [class|alpha|50] limit 1 facet_range [field=>extra_data_dt,start=>' . $start . ',end=>' . $end . ',gap=>+1MONTH]';
 		$facets = array();
 		if ($value != 'all'){
-			$query = "$field = $value $baseQuery";	
+			$query = "{$rangeQuery} {$field} = {$value} {$baseQuery}";	
 		}else{
-			$query = "$baseQuery";
+			$query = "{$rangeQuery}{$baseQuery}";
 		}
-		
+
 		$name = $value;
 		if (is_numeric($value)){
 			$object = eZContentObject::fetch($value);
@@ -256,13 +270,13 @@ class DataHandlerLifeFranca implements OpenPADataHandlerInterface
         return $facets;
 	}
 
-	private function getEventiFacetsData($field, $value)
-	{
+	private function getEventiFacetsData($field, $value, $range)
+	{		
 		if (isset($_GET['nocache'])){
-			return self::innerGetEventiFacetsData($field, $value);
+			return self::innerGetEventiFacetsData($field, $value, $range);
 		}
 
-		$fileName = "eventi-$field-$value.cache";
+		$fileName = "eventi-$field-$value-$range.cache";
 		$cacheFilePath = eZDir::path( array( eZSys::cacheDirectory(), 'lifefranca', $fileName ) );
 
 		$data = eZClusterFileHandler::instance($cacheFilePath)->processCache(
@@ -274,27 +288,28 @@ class DataHandlerLifeFranca implements OpenPADataHandlerInterface
             function($file, $args){
 		        $field = $args['field'];
 		        $value = $args['value'];
+		        $range = $args['range'];
 		        return array( 
-		        	'content' => self::innerGetEventiFacetsData($field, $value),
+		        	'content' => self::innerGetEventiFacetsData($field, $value, $range),
                   	'scope'   => 'lifefranca' 
               	);					
             },
             null,
             null,
-            array('field' => $field, 'value' => $value)
+            array('field' => $field, 'value' => $value, 'range' => $range)
         );
 
         return $data;
 	}
 
-	private function getEventi($field, $value)
+	private function getEventi($field, $value, $range)
 	{
 		$series = $categories = array();
 		if (!is_array($value)){
 			$value = array($value);
 		}
 		foreach ($value as $item) {
-			$facetsData = $this->getEventiFacetsData($field, intval($item));	
+			$facetsData = $this->getEventiFacetsData($field, intval($item), $range);	
 
 			if (self::isDebug()) return $facetsData;
 

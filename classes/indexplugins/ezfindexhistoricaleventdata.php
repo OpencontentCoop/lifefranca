@@ -1,12 +1,38 @@
 <?php
 
-class ezfIndexHistoricalEventData implements ezfIndexPlugin
+use Opencontent\Opendata\Api\Values\ExtraDataProviderInterface;
+use Opencontent\Opendata\Api\Values\ExtraData;
+
+class ezfIndexHistoricalEventData implements ezfIndexPlugin, ExtraDataProviderInterface
 {
     /**
      * @param eZContentObject $contentObect
      * @param array $docList
      */
     public function modify(eZContentObject $contentObject, &$docList)
+    {
+        $timestamp = $this->getTimestamp($contentObject);
+        
+        if ($timestamp){
+            $data = ezfSolrDocumentFieldBase::convertTimestampToDate($timestamp);
+            $version = $contentObject->currentVersion();
+            if ($version === false) {
+                return;
+            }
+            $availableLanguages = $version->translationList(false, false);
+            foreach ($availableLanguages as $languageCode) {
+                if ($docList[$languageCode] instanceof eZSolrDoc) {
+                    if ($docList[$languageCode]->Doc instanceof DOMDocument) {
+                        $docList[$languageCode]->addField('extra_data_dt', $data);
+                    }elseif ( is_array( $docList[$languageCode]->Doc ) && !isset( $docList[$languageCode]->Doc['extra_quantita_sf'] )){                                                    
+                        $docList[$languageCode]->addField('extra_data_dt', $data );                        
+                    }
+                }
+            }
+        }
+    }
+
+    private function getTimestamp(eZContentObject $contentObject)
     {
         if ($contentObject->attribute('class_identifier') == 'historical_event') {            
             $dataMap = $contentObject->dataMap();
@@ -24,27 +50,20 @@ class ezfIndexHistoricalEventData implements ezfIndexPlugin
                     if (isset($parts[2])){
                         $giorno = $parts[2];
                     }
-                    $timestamp = mktime(0, 0, 0, $mese, $giorno, $anno);
+                    return mktime(0, 0, 0, $mese, $giorno, $anno);
                     $data = ezfSolrDocumentFieldBase::convertTimestampToDate($timestamp);
                 }                
-
-                if ($data){
-                    $version = $contentObject->currentVersion();
-                    if ($version === false) {
-                        return;
-                    }
-                    $availableLanguages = $version->translationList(false, false);
-                    foreach ($availableLanguages as $languageCode) {
-                        if ($docList[$languageCode] instanceof eZSolrDoc) {
-                            if ($docList[$languageCode]->Doc instanceof DOMDocument) {
-                                $docList[$languageCode]->addField('extra_data_dt', $data);
-                            }elseif ( is_array( $docList[$languageCode]->Doc ) && !isset( $docList[$languageCode]->Doc['extra_quantita_sf'] )){                                                    
-                                $docList[$languageCode]->addField('extra_data_dt', $data );                        
-                            }
-                        }
-                    }
-                }
             }
+        }
+
+        return false;
+    }
+
+    public function setExtraDataFromContentObject(eZContentObject $contentObject, ExtraData $extraData)
+    {
+        $timestamp = $this->getTimestamp($contentObject);
+        if ($timestamp){
+            $extraData->set('timestamp', $timestamp);
         }
     }
 }

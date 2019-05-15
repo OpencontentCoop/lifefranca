@@ -31,19 +31,6 @@
             buildQuery: function () {
                 // non mi serve filtrare la query perché i risultati vengono calcolati direttamente dai filtri attivi
                 return null;
-
-                var currentValues = this.getCurrent();
-                if (currentValues.length && jQuery.inArray('all', currentValues) == -1) {
-                    return queryField+' in [\'' + $.map(currentValues, function (item) {
-                        return item.toString()
-                            .replace(/"/g, '\\\"')
-                            .replace(/'/g, "\\'")
-                            .replace(/\(/g, "\\(")
-                            .replace(/\)/g, "\\)");
-                    }).join("','") + '\']';
-                }
-
-                return null;
             },
 
             filterClickEvent: function (e, view) {
@@ -78,7 +65,7 @@
                     }
                 }
                 this.setCurrent(selectedValue);
-                view.doSearch();
+                view.doSearch();                
                 e.preventDefault();
             },
 
@@ -158,21 +145,7 @@
             },
 
             buildQuery: function () {
-                
                 // non mi serve filtrare la query perché i risultati vengono calcolati direttamente dai filtri attivi
-                return null;
-                
-                var currentValues = this.getCurrent();
-                if (currentValues.length && jQuery.inArray('all', currentValues) == -1) {
-                    return queryField+' in [\'' + $.map(currentValues, function (item) {
-                        return item.toString()
-                            .replace(/"/g, '\\\"')
-                            .replace(/'/g, "\\'")
-                            .replace(/\(/g, "\\(")
-                            .replace(/\)/g, "\\)");
-                    }).join("','") + '\']';
-                }
-
                 return null;
             },
 
@@ -181,10 +154,6 @@
                 //console.log('filter.addToLayer ', link.data('value'), self.layer);
                 var id = link.data('value');
                 var json = link.data('geojson');                
-                // console.log(self.name, id);
-                // if (self.name == 'bacinoprincipale.id'){                                        
-                //     $('#sottobacino').find('[data-bacino="'+id+'"]').trigger('click');
-                // }
                 var added = $.addGeoJSONLayer(json, currentMap, self.layer, null, self.layerOptions, null,
                     function(feature, layer) {                  
                         feature.properties._id = link.data('value');
@@ -249,12 +218,14 @@
                             var id = targetLayer.feature.properties._id;
                             //console.log('filter.init '+id);                            
                             $('a[data-value="'+id+'"]', $(self.container)).trigger('click');
+                            $('.widget.in').each(function(){$(this).removeClass('in').trigger('hidden.bs.collapse');});
                         }else if (targetLayer._layers){
                             $.each(targetLayer._layers, function(){                            
                                 if (this._leaflet_id == clickedLeafletId){
                                     var id = targetLayer.feature.properties._id;
                                     //console.log('filter.init '+id);
                                     $('a[data-value="'+id+'"]', $(self.container)).trigger('click');
+                                    $('.widget.in').each(function(){$(this).removeClass('in').trigger('hidden.bs.collapse');});
                                     return;
                                 }
                             });
@@ -381,7 +352,7 @@
                 
         var currentBackground;
         var currentBackgroundFilter;
-        var currentMap = new L.Map(that.find('.map')[0], { minZoom: 9, center: new L.LatLng(0, 0), zoom: 13 })
+        var currentMap = new L.Map(that.find('.map')[0], { minZoom: 8, center: new L.LatLng(0, 0), zoom: 13 })
             .addLayer(osm);        
         currentMap.scrollWheelZoom.disable();
         var baseLayer = L.featureGroup();
@@ -431,10 +402,6 @@
                 currentBackground = baseLayer;
 
                 filterWrapper.find('.current-xs-filters').html('<li>'+layerElement.text()+'</li>');
-
-                // if (filterWrapper.find('.collapse').hasClass('in')){
-                //     filterWrapper.find('h4.widget_title a').trigger('click');
-                // }
             }
         }        
         $('.base-layer-buttons a').on('click', function(e){            
@@ -525,9 +492,6 @@
                         filterContainer.find('li a[data-value="all"]').parent().addClass('active');
                     }
                 });
-
-
-                //spinner.remove();                
             },
             onLoadErrors: function (errorCode, errorMessage, jqXHR, view) {
                 view.container.html('<div class="alert alert-danger">' + errorMessage + '</div>')

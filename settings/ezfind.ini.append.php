@@ -5,6 +5,6 @@ Class[opera]=ezfIndexOperaQuantita
 Class[historical_event]=ezfIndexHistoricalEventData
 
 [ExtendedAttributeFilters]
-FiltersList[range]=LifeFrancaRangeExtendedAttributeFilter
+FiltersList[facet_range]=LifeFrancaRangeExtendedAttributeFilter
 
 */ ?>

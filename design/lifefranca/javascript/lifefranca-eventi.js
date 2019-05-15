@@ -37,19 +37,6 @@
                 
                 // non mi serve filtrare la query perché i risultati vengono calcolati direttamente dai filtri attivi
                 return null;
-                
-                var currentValues = this.getCurrent();
-                if (currentValues.length && jQuery.inArray('all', currentValues) == -1) {
-                    return queryField+' in [\'' + $.map(currentValues, function (item) {
-                        return item.toString()
-                            .replace(/"/g, '\\\"')
-                            .replace(/'/g, "\\'")
-                            .replace(/\(/g, "\\(")
-                            .replace(/\)/g, "\\)");
-                    }).join("','") + '\']';
-                }
-
-                return null;
             },
 
             addToLayer: function(link){
@@ -57,10 +44,6 @@
                 //console.log('filter.addToLayer ', link.data('value'), self.layer);
                 var id = link.data('value');
                 var json = link.data('geojson');                
-                // console.log(self.name, id);
-                // if (self.name == 'bacinoprincipale.id'){                                        
-                //     $('#sottobacino').find('[data-bacino="'+id+'"]').trigger('click');
-                // }
                 var added = $.addGeoJSONLayer(json, currentMap, self.layer, null, self.layerOptions, null,
                     function(feature, layer) {                  
                         feature.properties._id = link.data('value');
@@ -125,12 +108,14 @@
                             var id = targetLayer.feature.properties._id;
                             //console.log('filter.init '+id);                            
                             $('a[data-value="'+id+'"]', $(self.container)).trigger('click');
+                            $('.widget.in').each(function(){$(this).removeClass('in').trigger('hidden.bs.collapse');});
                         }else if (targetLayer._layers){
                             $.each(targetLayer._layers, function(){                            
                                 if (this._leaflet_id == clickedLeafletId){
                                     var id = targetLayer.feature.properties._id;
                                     //console.log('filter.init '+id);
                                     $('a[data-value="'+id+'"]', $(self.container)).trigger('click');
+                                    $('.widget.in').each(function(){$(this).removeClass('in').trigger('hidden.bs.collapse');});
                                     return;
                                 }
                             });
@@ -219,6 +204,15 @@
     $.fn.lifeFrancaBlock = function (settings) {
         
         var that = $(this);
+        
+        var formatDate = function( date ) {
+            var weekdays = [ "Domenica", "Lunedi", "Martedi","Mercoledi", "Giovedi", "Venerdi", "Sabato" ];
+            var months = [ "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre" ];    
+            return date.getFullYear();
+        };
+        var setDate = function( value ){ 
+            $(this).html(formatDate(new Date(+value))); 
+        }
 
         var options = $.extend(true, {
             'query': "",
@@ -243,7 +237,8 @@
             'dataChart': ''
         }, settings)
 
-
+        var yearSlider = $("#year-selector-slider");
+        var yearSelector = $("#data-year-selector");
         var filterTpl = $.templates(options.filterTpl);
         var spinner = $($.templates(options.spinnerTpl).render({}));
         var empty = $.templates(options.emptyTpl).render({});
@@ -257,10 +252,27 @@
                 
         var currentBackground;
         var currentBackgroundFilter;
-        var currentMap = new L.Map(that.find('.map')[0], { minZoom: 9, center: new L.LatLng(0, 0), zoom: 13 })
+        var currentMap = new L.Map(that.find('.map')[0], { minZoom: 8, center: new L.LatLng(0, 0), zoom: 13 })
             .addLayer(osm);        
         currentMap.scrollWheelZoom.disable();
         var baseLayer = L.featureGroup();
+
+        var sliderStart = yearSlider.data('start')*1000;
+        var sliderEnd = yearSlider.data('end')*1000;
+        yearSlider.noUiSlider({
+          range: {
+            min: sliderStart,
+            max: sliderEnd
+          },
+          step: 7 * 24 * 60 * 60 * 1000,
+          start: [sliderStart,sliderEnd],
+          format: wNumb({
+            decimals: 0
+          })
+        });
+        yearSlider.Link('lower').to($("#year-selector .event-start span"), setDate);
+        yearSlider.Link('upper').to($("#year-selector .event-end span"), setDate);
+        yearSelector.val( Math.floor(sliderStart/1000) + ',' + Math.floor(sliderEnd/1000) );
 
         var selectBaseLayer = function(layerElement){
             if (layerElement.length > 0){
@@ -307,10 +319,6 @@
                 currentBackground = baseLayer;
 
                 filterWrapper.find('.current-xs-filters').html('<li>'+layerElement.text()+'</li>');
-
-                // if (filterWrapper.find('.collapse').hasClass('in')){
-                //     filterWrapper.find('h4.widget_title a').trigger('click');
-                // }
             }
         }        
         $('.base-layer-buttons a').on('click', function(e){            
@@ -323,6 +331,8 @@
         var searchView = that.lifeFrancaSearchView({
             query: options.query,  
             onLoadResults: function (response, query, appendResults, view) {                
+
+                var yearRange = yearSelector.val();                
 
                 var currentFilterContainer = view.container.find('.current-filter');
                 var currentFilterAggregateContainer = view.container.find('.current-filter-aggregate');    
@@ -363,14 +373,7 @@
                             }));
                             currentFilterAggregateContainer.html(currentFilterAggrItem);
 
-                            // var currentFilterTimeItem = $(chartTpl.render({
-                            //     label: 'Timeline degli eventi',
-                            //     color: filter.layerOptions.color,
-                            //     height: 420
-                            // }));                                                                                 
-                            // currentFilterTimeContainer.html(currentFilterTimeItem);
-
-                            $.get('/openpa/data/lifefranca', {type: options.dataChart, field: field, value: currentValues}, function(response) {
+                            $.get('/openpa/data/lifefranca', {type: options.dataChart, field: field, value: currentValues, range: yearRange}, function(response) {
                                 response.tooltip = {
                                     headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
                                     pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
@@ -382,9 +385,6 @@
                                 Highcharts.chart(currentFilterAggrItem.find('.chart')[0], response);
                             });
 
-                            // $.get('/openpa/data/lifefranca', {type: 'timeline', field: field, value: currentValues}, function(response) {
-                            //     Highcharts.chart(currentFilterTimeItem.find('.chart')[0], response);                                
-                            // });                            
                         }
                     }else{
                         filterContainer.find('li a[data-value="all"]').parent().addClass('active');
@@ -432,8 +432,16 @@
         $.each(searchView.filters, function(){
             var filter = this;              
             if (filter.name == 'bacinoprincipale.id'){
-                $(filter.container).find('a.Linklist-link').first().trigger('click');
+                $(filter.container).find('a.Linklist-link').trigger('click');
             }            
+        });
+
+        yearSlider.on({
+          change: function(){
+            var range = $(this).val();
+            yearSelector.val( Math.floor(range[0]/1000) + ',' + Math.floor(range[1]/1000) );
+            searchView.doSearch();        
+          }
         });
 
         return this;
