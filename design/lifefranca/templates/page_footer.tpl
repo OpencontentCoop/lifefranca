@@ -62,8 +62,8 @@
 
         <div class="Grid Grid--withGutter">
 
-            <div class="Footer-block Grid-cell {$footerBlocksClass} u-textCenter">
-                <img src="{'images/logo_pat_footer.png'|ezdesign(no)}" alt="Provincia autonoma di Trento" /> 
+            <div class="Footer-block Grid-cell {$footerBlocksClass}">
+                <img src="{'images/logo_pat_footer.png'|ezdesign(no)}" alt="Provincia autonoma di Trento" style="width: 120px;" /> 
             </div>
 
             {if $has_notes}
