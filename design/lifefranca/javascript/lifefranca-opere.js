@@ -542,7 +542,7 @@
                 $(filter.container).find('a.Linklist-link').trigger('click');
             }
             if (filter.name == 'tipologia'){                
-                $(filter.container).find('a[data-value="Briglia di consolidamento"]').trigger('click');
+                $(filter.container).find('a[data-value="Briglia di trattenuta"]').trigger('click');
             }
         });
 
