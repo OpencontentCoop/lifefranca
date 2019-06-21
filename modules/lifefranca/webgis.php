@@ -8,14 +8,14 @@ $url = false;
 
 if ($http->hasPostVariable('CheckAddress') && $http->hasPostVariable('address')){
 
-	$address = $http->postVariable('address');
-	$url = "https://wglifefranca.provincia.tn.it/lifefranca-2d/address=$address";
+	$address = urlencode($http->postVariable('address'));
+	$url = "https://wglifefranca.provincia.tn.it/lifefranca-2d/?address=$address&type=0";
 
 }elseif ($http->hasPostVariable('CheckCoords') && $http->hasPostVariable('lat') && $http->hasPostVariable('lng')){
 
 	$lat = $http->postVariable('lat');
 	$lng = $http->postVariable('lng');
-	$url = "https://wglifefranca.provincia.tn.it/lifefranca-2d/coord=$lat;$lng";
+	$url = "https://wglifefranca.provincia.tn.it/lifefranca-2d/?coord=$lat;$lng&type=1";
 }
 
 if ($url){
