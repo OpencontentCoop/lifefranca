@@ -258,6 +258,7 @@
         var baseLayer = L.featureGroup();
 
         var sliderStart = yearSlider.data('start')*1000;
+        var sliderInitial = yearSlider.data('initial')*1000;
         var sliderEnd = yearSlider.data('end')*1000;
         yearSlider.noUiSlider({
           range: {
@@ -265,7 +266,7 @@
             max: sliderEnd
           },
           step: 7 * 24 * 60 * 60 * 1000,
-          start: [sliderStart,sliderEnd],
+          start: [sliderInitial,sliderEnd],
           format: wNumb({
             decimals: 0
           })

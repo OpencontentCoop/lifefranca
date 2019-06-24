@@ -59,8 +59,8 @@
     'limit', 300)
 )}
 
-{*def $first_event_timestamp = api_search("select-fields [extradata.timestamp] classes [historical_event] sort [raw[extra_data_dt]=>asc] limit 1")[0]*}
-{def $first_event_timestamp = 631152000} {*1/1/1990*}
+{def $first_event_timestamp = api_search("select-fields [extradata.timestamp] classes [historical_event] sort [raw[extra_data_dt]=>asc] limit 1")[0]}
+{def $start_event_timestamp = 631152000} {*1/1/1990*}
 <div class="openpa-widget {$block.view}">
     {if and( $show_title, $block.name|ne('') )}
         <h3 class="openpa-widget-title"><span>{$block.name|wash()}</span></h3>
@@ -220,7 +220,7 @@
                 <small class="event-start">da <span></span></small> 
                 <small class="event-end">a <span></span></small>
             </p>
-            <div id="year-selector-slider" style="padding: 0 20px" data-start="{$first_event_timestamp}" data-end="{currentdate()}"></div>            
+            <div id="year-selector-slider" style="padding: 0 20px" data-start="{$first_event_timestamp}" data-initial="{$start_event_timestamp}" data-end="{currentdate()}"></div>            
           </div>
           <input id="data-year-selector" type="hidden" name="year" value="" />
         </div>
