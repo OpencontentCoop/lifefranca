@@ -142,3 +142,7 @@
     .Footer-block li a{ldelim}display: table-cell;vertical-align: top;{rdelim}
 </style>
 {undef}
+
+<script>
+document.addEventListener("contextmenu", function(e){ldelim}e.preventDefault();{rdelim}, false);
+</script>

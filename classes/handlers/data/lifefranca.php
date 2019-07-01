@@ -71,7 +71,7 @@ class DataHandlerLifeFranca implements OpenPADataHandlerInterface
 			}
 		}
 		
-		$baseQuery = 'classes [opera] facets [tipoopera|alpha|50] limit 1 stats [field=>extra_quantita_sf, facet=>[attr_tipoopera_s]] pivot [facet=>[attr_tipoopera_s,attr_unita_misura_s],mincount=>0]';
+		$baseQuery = 'classes [opera] facets [tipoopera|alpha|50] limit 1 stats [field=>extra_quantita_sf, facet=>[attr_tipoopera_s]] pivot [facet=>[attr_tipoopera_s,attr_unita_misura_s],mincount=>1]';
 		$facets = array();
 		if ($value != 'all'){
 			$query = "$field = $value $baseQuery";	
