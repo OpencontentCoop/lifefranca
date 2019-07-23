@@ -144,5 +144,40 @@
 {undef}
 
 <script>
-document.addEventListener("contextmenu", function(e){ldelim}e.preventDefault();{rdelim}, false);
+{literal}
+function bindEvent(element, eventName, eventHandler) {
+    if (element.addEventListener) {
+        element.addEventListener(eventName, eventHandler, false);
+    } else if (element.attachEvent) {
+        element.attachEvent('on' + eventName, eventHandler);
+    }
+}
+function disableRightClick(){
+    document.addEventListener("contextmenu", function (e) {
+        e.preventDefault();
+    }, false);
+}
+function disableMailto(){
+    jQuery('a[href^="mailto:"]').on('click', function(e){
+        e.preventDefault(); 
+    });
+    jQuery("a").click(function( e ) {
+        e.preventDefault();
+    });
+    jQuery('a[href*="index.html"],[href*="lifefranca.eu"]').click(function( event ) {
+        jQuery(this).unbind('click');
+    });
+}
+function hideCookiesModal(){
+    jQuery("#moove_gdpr_cookie_info_bar").css("display","none");
+}
+// Listen to messages from parent window
+bindEvent(window, 'message', function (e) {
+    if(e.data=='iframecalling'){
+        hideCookiesModal();
+        disableRightClick();
+        disableMailto();
+    }
+});
+{/literal}
 </script>
