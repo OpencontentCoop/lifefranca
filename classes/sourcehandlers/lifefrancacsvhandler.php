@@ -30,6 +30,14 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 
 	protected $eventiRootNode;
 
+	protected $comuniRootNode;
+
+	protected $comunitaRootNode;
+
+	protected $bacini1RootNode;
+
+	protected $bacini2RootNode;
+
 	protected $opereRootNodeChildren;
 
 	protected $currentFileNode;
@@ -67,25 +75,30 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 					$stateId = $state->attribute('id');
 				}
 			}
-			$rootObject = eZContentObject::fetchByRemoteID('csv-import-opere-repository');
-			if ($rootObject instanceof eZContentObject && $stateId){
-				$rootNode = $rootObject->attribute('main_node');
-				$this->dataSource = $rootNode->subtree(array(
-					'AttributeFilter' => array(array('state', '=', $stateId))
-				));
-				$this->repositories['opera'] = $rootNode->attribute('node_id');
-			}
-			$rootObject = eZContentObject::fetchByRemoteID('csv-import-eventi-repository');
-			if ($rootObject instanceof eZContentObject && $stateId){
-				$rootNode = $rootObject->attribute('main_node');
-				$this->dataSource = array_merge(
-					$this->dataSource, 
-					$rootNode->subtree(array(
-						'AttributeFilter' => array(array('state', '=', $stateId))
-					))
-				);
-				$this->repositories['evento'] = $rootNode->attribute('node_id');
-			}
+
+			$remotes = array(
+				'csv-import-opere-repository' => 'opera',
+				'csv-import-eventi-repository' => 'evento',
+				'json-import-comuni-repository' => 'comuni',
+				'json-import-comunita-repository' => 'comunita',
+				'json-import-bacini1-repository' => 'bacini1',
+				'json-import-bacini2-repository' => 'bacini2',
+			);
+			$this->dataSource = array();
+
+			foreach ($remotes as $remote => $repo) {
+				$rootObject = eZContentObject::fetchByRemoteID($remote);
+				if ($rootObject instanceof eZContentObject && $stateId){
+					$rootNode = $rootObject->attribute('main_node');
+					$this->dataSource = array_merge(
+						$this->dataSource, 
+						$rootNode->subtree(array(
+							'AttributeFilter' => array(array('state', '=', $stateId))
+						))
+					);
+					$this->repositories[$repo] = $rootNode->attribute('node_id');
+				}
+			}		
 		}
 
 		$opereRoot = eZContentObject::fetchByRemoteID('opere');
@@ -101,6 +114,34 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 			$this->eventiRootNode = $eventiRoot->attribute('main_node');			
 		}else{
 			throw new Exception("Eventi root node not found", 1);			
+		}
+
+		$comuniRoot = eZContentObject::fetchByRemoteID('comuni');
+		if ($comuniRoot instanceof eZContentObject){
+			$this->comuniRootNode = $comuniRoot->attribute('main_node');			
+		}else{
+			throw new Exception("Comuni root node not found", 1);			
+		}
+
+		$comunitaRoot = eZContentObject::fetchByRemoteID('comunita');
+		if ($comunitaRoot instanceof eZContentObject){
+			$this->comunitaRootNode = $comunitaRoot->attribute('main_node');			
+		}else{
+			throw new Exception("Comunita root node not found", 1);			
+		}
+
+		$bacini1Root = eZContentObject::fetchByRemoteID('bacini-1');
+		if ($bacini1Root instanceof eZContentObject){
+			$this->bacini1RootNode = $bacini1Root->attribute('main_node');			
+		}else{
+			throw new Exception("Bacini 1 root node not found", 1);			
+		}
+		
+		$bacini2Root = eZContentObject::fetchByRemoteID('bacini-2');
+		if ($bacini2Root instanceof eZContentObject){
+			$this->bacini2RootNode = $bacini2Root->attribute('main_node');			
+		}else{
+			throw new Exception("Bacini 2 root node not found", 1);			
 		}
 	}
 
@@ -154,6 +195,18 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 
 				if ($this->currentFileNode->attribute('parent_node_id') == $this->repositories['evento'])
 					return $this->processEventoFile($filePath);	
+
+				if ($this->currentFileNode->attribute('parent_node_id') == $this->repositories['comuni'])
+					return $this->processComuneFile($filePath);	
+
+				if ($this->currentFileNode->attribute('parent_node_id') == $this->repositories['comunita'])
+					return $this->processComunitaFile($filePath);	
+
+				if ($this->currentFileNode->attribute('parent_node_id') == $this->repositories['bacini1'])
+					return $this->processBacino1File($filePath);	
+
+				if ($this->currentFileNode->attribute('parent_node_id') == $this->repositories['bacini2'])
+					return $this->processBacino2File($filePath);	
 			}			
 		}
 
@@ -445,6 +498,260 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		unset($content);
 		//$this->appendFileNodeLog("Pubblicato/Aggiornato contenuto #{$newID}");     
 		$this->currentRowId = null;
+	}
+
+	private function processComuneFile($filePath)
+	{		
+		$this->setFileNodeStatus(self::STATUS_DOING);
+
+		$dataSource = json_decode(file_get_contents($filePath), true);
+		
+		foreach ($dataSource['features'] as $item) {    		
+    		try{
+        		$this->importComune($item);	        		
+        	}catch(Exception $e){
+        		$this->appendFileNodeLog($e->getMessage());   
+        	}
+    	}
+
+		if ($this->currentFileHasError)
+        	$this->setFileNodeStatus(self::STATUS_ERROR);
+        else
+        	$this->setFileNodeStatus(self::STATUS_DONE);
+
+        $this->storeFileNodeLog();
+	}
+
+	private function importComune($item, &$importIdList)
+	{		
+		$properties = $item['properties'];
+
+		if (!isset($properties['classid']) || !isset($properties['comune'])){
+			throw new Exception("Proprietà comune o classid non trovata", 1);				
+		}
+
+        $map = array(
+            'type' => '',
+            'color' => '',
+            'source' => '',
+            'geo_json' => json_encode(array(
+                "type" => "FeatureCollection",
+                "features" => array($item)
+            )),            
+        );
+
+		$this->currentRowId = (string)$properties['classid'];
+        if(!eZContentObject::fetchByRemoteID($properties['classid'])){
+			$contentOptions = new SQLIContentOptions(array(
+	            'class_identifier' => 'comune',
+	            'remote_id' => $properties['classid'],
+	        ));
+
+	        $parentNodeID = $this->comuniRootNode->attribute('node_id');
+
+	        $content = SQLIContent::create($contentOptions);
+	        $content->fields->name = strtoupper($properties['comune']);
+	        $content->fields->map = json_encode($map);
+	        
+	        $content->addLocation(SQLILocation::fromNodeID($parentNodeID));
+	        $publisher = SQLIContentPublisher::getInstance();
+	        $publisher->publish($content);	        
+			unset($content);
+        }
+        $this->currentRowId = null;
+	}
+
+	private function processComunitaFile($filePath)
+	{
+		$this->setFileNodeStatus(self::STATUS_DOING);
+
+		$dataSource = json_decode(file_get_contents($filePath), true);
+		foreach ($dataSource['features'] as $item) {
+    		try{
+        		$this->importComunita($item);	        		
+        	}catch(Exception $e){
+        		$this->appendFileNodeLog($e->getMessage());   
+        	}
+    	}
+
+		if ($this->currentFileHasError)
+        	$this->setFileNodeStatus(self::STATUS_ERROR);
+        else
+        	$this->setFileNodeStatus(self::STATUS_DONE);
+
+        $this->storeFileNodeLog(); 
+	}
+
+	private function importComunita($item)
+	{
+		$properties = $item['properties'];
+
+		if (!isset($properties['classid']) || !isset($properties['comunita_di_valle'])){
+			throw new Exception("Proprietà comunita_di_valle o classid non trovata", 1);				
+		}
+
+        $map = array(
+            'type' => '',
+            'color' => '',
+            'source' => '',
+            'geo_json' => json_encode(array(
+                "type" => "FeatureCollection",
+                "features" => array($item)
+            )),            
+        );
+
+		$this->currentRowId = (string)$properties['classid'];
+        if(!eZContentObject::fetchByRemoteID($properties['classid'])){
+			$contentOptions = new SQLIContentOptions(array(
+	            'class_identifier' => 'comunita',
+	            'remote_id' => $properties['classid'],
+	        ));
+
+	        $parentNodeID = $this->comunitaRootNode->attribute('node_id');
+
+	        $content = SQLIContent::create($contentOptions);
+	        $content->fields->name = strtoupper($properties['comunita_di_valle']);
+	        $content->fields->map = json_encode($map);
+	        
+	        $content->addLocation(SQLILocation::fromNodeID($parentNodeID));
+	        $publisher = SQLIContentPublisher::getInstance();
+	        $publisher->publish($content);	        
+			unset($content);
+        }
+        $this->currentRowId = null;
+	}
+
+	private function processBacino1File($filePath)
+	{
+		$this->setFileNodeStatus(self::STATUS_DOING);
+
+		$dataSource = json_decode(file_get_contents($filePath), true);
+		foreach ($dataSource['features'] as $item) {
+    		try{
+        		$this->importBacino1($item);	        		
+        	}catch(Exception $e){
+        		$this->appendFileNodeLog($e->getMessage());   
+        	}
+    	}
+
+		if ($this->currentFileHasError)
+        	$this->setFileNodeStatus(self::STATUS_ERROR);
+        else
+        	$this->setFileNodeStatus(self::STATUS_DONE);
+
+        $this->storeFileNodeLog(); 
+	}
+
+	private function importBacino1($item)
+	{
+		$properties = $item['properties'];
+
+		if (!isset($properties['classid']) || !isset($properties['nomebacino'])){
+			throw new Exception("Proprietà nomebacino o classid non trovata", 1);				
+		}
+
+        $map = array(
+            'type' => '',
+            'color' => '',
+            'source' => '',
+            'geo_json' => json_encode(array(
+                "type" => "FeatureCollection",
+                "features" => array($item)
+            )),            
+        );
+
+		$this->currentRowId = (string)$properties['classid'];
+        if(!eZContentObject::fetchByRemoteID($properties['classid'])){
+			$contentOptions = new SQLIContentOptions(array(
+	            'class_identifier' => 'bacino',
+	            'remote_id' => $properties['classid'],
+	        ));
+
+	        $parentNodeID = $this->bacini1RootNode->attribute('node_id');
+
+	        $content = SQLIContent::create($contentOptions);
+	        $content->fields->name = $properties['nomebacino'];
+	        $content->fields->map = json_encode($map);
+	        $content->fields->level = 'PRINCIPALE';
+	        $content->fields->objectid = isset($properties['objectid']) ? $properties['objectid'] : null;
+	        $content->fields->classid = $properties['classid'];
+
+	        
+	        $content->addLocation(SQLILocation::fromNodeID($parentNodeID));
+	        $publisher = SQLIContentPublisher::getInstance();
+	        $publisher->publish($content);	        
+			unset($content);
+        }
+        $this->currentRowId = null;
+	}
+
+	private function processBacino2File($filePath)
+	{
+		$this->setFileNodeStatus(self::STATUS_DOING);
+
+		$dataSource = json_decode(file_get_contents($filePath), true);
+		foreach ($dataSource['features'] as $item) {
+    		try{
+        		$this->importBacino2($item);	        		
+        	}catch(Exception $e){
+        		$this->appendFileNodeLog($e->getMessage());   
+        	}
+    	}
+
+		if ($this->currentFileHasError)
+        	$this->setFileNodeStatus(self::STATUS_ERROR);
+        else
+        	$this->setFileNodeStatus(self::STATUS_DONE);
+
+        $this->storeFileNodeLog(); 
+	}
+
+	private function importBacino2($item)
+	{
+		$properties = $item['properties'];
+
+		if (!isset($properties['classid']) || !isset($properties['nomesottobacino'])){
+			throw new Exception("Proprietà nomebacino o classid non trovata", 1);				
+		}
+
+        $map = array(
+            'type' => '',
+            'color' => '',
+            'source' => '',
+            'geo_json' => json_encode(array(
+                "type" => "FeatureCollection",
+                "features" => array($item)
+            )),            
+        );
+
+		$this->currentRowId = (string)$properties['classid'];
+        if(!eZContentObject::fetchByRemoteID($properties['classid'])){
+			$contentOptions = new SQLIContentOptions(array(
+	            'class_identifier' => 'bacino',
+	            'remote_id' => $properties['classid'],
+	        ));
+
+	        $parentNodeID = $this->bacini2RootNode->attribute('node_id');
+
+	        $content = SQLIContent::create($contentOptions);
+	        $content->fields->name = strtoupper($properties['nomesottobacino']);
+	        $content->fields->map = json_encode($map);
+	        $content->fields->level = 'I LIVELLO';
+	        $content->fields->objectid = isset($properties['objectid']) ? $properties['objectid'] : null;
+	        $content->fields->classid = $properties['classid'];
+	        if (isset($properties['parent_classid'])){
+	        	$bacinoSuperiore = eZContentObject::fetchByRemoteID($properties['parent_classid']);
+	        	if($bacinoSuperiore instanceof eZContentObject){
+	        		$content->fields->bacino_superiore = $bacinoSuperiore->attribute('id');
+	        	}
+	        }
+	        
+	        $content->addLocation(SQLILocation::fromNodeID($parentNodeID));
+	        $publisher = SQLIContentPublisher::getInstance();
+	        $publisher->publish($content);	        
+			unset($content);
+        }
+        $this->currentRowId = null;
 	}
 
 	private function appendFileNodeLog($message)

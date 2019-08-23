@@ -1,0 +1,67 @@
+[{
+	"name": "GeoJSON atteso per import comuni",
+	"type": "FeatureCollection",	
+	"features": [
+		{ 
+			"type": "Feature", 
+			"properties": { 
+				"comune": "Nome del comune (richiesto)",
+				"classid": "classid  (richiesto)"
+			}, 
+			"geometry": {
+				"type": "geometry in WGS-84 coordinate system"				
+			}
+		}
+	]
+},
+{
+	"name": "GeoJSON atteso per import comunita di valle",
+	"type": "FeatureCollection",	
+	"features": [
+		{ 
+			"type": "Feature", 
+			"properties": { 
+				"comunita_di_valle": "Nome della comunita di valle (richiesto)",
+				"classid": "classid  (richiesto)"
+			}, 
+			"geometry": {
+				"type": "geometry in WGS-84 coordinate system"							
+			}
+		}
+	]
+},
+{
+	"name": "GeoJSON atteso per import bacini",
+	"type": "FeatureCollection",	
+	"features": [
+		{ 
+			"type": "Feature", 
+			"properties": { 
+				"nomebacino": "Nome del sottobacinobacino (richiesto)",
+				"classid": "classid  (richiesto)",				
+				"objectid": "objectid"
+			}, 
+			"geometry": {
+				"type": "geometry in WGS-84 coordinate system"							
+			}
+		}
+	]
+},
+{
+	"name": "GeoJSON atteso per import sottobacini",
+	"type": "FeatureCollection",		
+	"features": [
+		{ 
+			"type": "Feature", 
+			"properties": { 
+				"nomesottobacino": "Nome del sottobacinobacino (richiesto)",
+				"classid": "classid  (richiesto)",
+				"parent_classid": "classid del bacino superiore",
+				"objectid": "objectid"
+			}, 
+			"geometry": {
+				"type": "geometry in WGS-84 coordinate system"								
+			}
+		}
+	]
+}]
