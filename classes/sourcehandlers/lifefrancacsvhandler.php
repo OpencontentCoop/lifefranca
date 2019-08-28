@@ -175,6 +175,9 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 
 	public function process($row)
 	{	
+		$db = eZDB::instance();
+        $db->setErrorHandling(eZDB::ERROR_HANDLING_EXCEPTIONS);
+
 		$this->currentFileNode = $row;
 		$this->currentFileHasError = false;
 		$this->currentGUID = $this->currentFileNode->attribute('name');
@@ -231,6 +234,9 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
         	foreach ($dataSource as $item) {
         		try{
 	        		$this->importOpera($item);	        		
+	        	}catch(eZDBException $e){
+					$db->rollback();
+	        		$this->appendFileNodeLog($e->getMessage());   
 	        	}catch(Exception $e){
 	        		$this->appendFileNodeLog($e->getMessage());   
 	        	}
@@ -334,7 +340,8 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 			'opera spondale' => 'Opera spondale',
 			'opere di consolidamento' => 'Opera di consolidamento',
 			'opere consolidamento' => 'Opera di consolidamento',
-			'piazza e vasche di deposito' => 'Piazza di deposito',
+			'piazza e vasche di deposito' => 'Piazza di deposito',		
+			'piazze e vasche di deposito' => 'Piazza di deposito',			
 			'vallitomo' => 'Vallo Tomo',
 			'rivestimenti in alveo' => 'Rivestimento Alveo',
 			'repellente' => 'Repellente',
@@ -420,7 +427,10 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
         if ($this->validateEventoHeaders($dataSource->getHeaders())){
         	foreach ($dataSource as $item) {
         		try{
-	        		$this->importEvento($item);	        		
+	        		$this->importEvento($item);	
+        		}catch(eZDBException $e){
+					$db->rollback();
+	        		$this->appendFileNodeLog($e->getMessage());           		
 	        	}catch(Exception $e){
 	        		$this->appendFileNodeLog($e->getMessage());   
 	        	}
@@ -509,6 +519,9 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		foreach ($dataSource['features'] as $item) {    		
     		try{
         		$this->importComune($item);	        		
+        	}catch(eZDBException $e){
+					$db->rollback();
+	        		$this->appendFileNodeLog($e->getMessage());   
         	}catch(Exception $e){
         		$this->appendFileNodeLog($e->getMessage());   
         	}
@@ -569,6 +582,9 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		foreach ($dataSource['features'] as $item) {
     		try{
         		$this->importComunita($item);	        		
+        	}catch(eZDBException $e){
+					$db->rollback();
+	        		$this->appendFileNodeLog($e->getMessage());   
         	}catch(Exception $e){
         		$this->appendFileNodeLog($e->getMessage());   
         	}
@@ -629,6 +645,9 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		foreach ($dataSource['features'] as $item) {
     		try{
         		$this->importBacino1($item);	        		
+        	}catch(eZDBException $e){
+					$db->rollback();
+	        		$this->appendFileNodeLog($e->getMessage());   
         	}catch(Exception $e){
         		$this->appendFileNodeLog($e->getMessage());   
         	}
@@ -693,6 +712,9 @@ class LifeFrancaCSVHandler extends SQLIImportAbstractHandler implements ISQLIImp
 		foreach ($dataSource['features'] as $item) {
     		try{
         		$this->importBacino2($item);	        		
+        	}catch(eZDBException $e){
+					$db->rollback();
+	        		$this->appendFileNodeLog($e->getMessage());   
         	}catch(Exception $e){
         		$this->appendFileNodeLog($e->getMessage());   
         	}

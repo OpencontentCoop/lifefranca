@@ -9,9 +9,9 @@
 
     <div class="content-container">
         <div class="content">
-            <div class="text-center">
+            <div class="text-center u-margin-bottom-xl">
                 <a class="button defaultbutton" href={concat("/ezmultiupload/upload/",$node.node_id)|ezurl} title="{'Multiupload'|i18n('extension/ezmultiupload')}">
-                    Carica file csv
+                    Carica file {if $node.name|downcase()|contains('csv')}csv{elseif $node.name|downcase()|contains('json')}json{/if}
                 </a>
             </div>
 
