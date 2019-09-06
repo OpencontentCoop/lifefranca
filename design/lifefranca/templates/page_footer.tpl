@@ -170,6 +170,7 @@ function disableMailto(){
 }
 function hideCookiesModal(){
     jQuery("#moove_gdpr_cookie_info_bar").css("display","none");
+    jQuery("#cookieChoiceInfo").css("display","none");
 }
 // Listen to messages from parent window
 bindEvent(window, 'message', function (e) {
